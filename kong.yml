@@ -1,0 +1,85 @@
+_format_version: "3.0"
+
+services:
+  - name: todo-grpc-service
+    url: grpc://3.6.74.35:50051
+
+routes:
+  - name: get-all-todos
+    paths:
+      - /todos
+    protocols:
+      - http
+    methods:
+      - GET
+    service: todo-grpc-service  
+
+  - name: create-todo
+    paths:
+      - /todos
+    protocols:
+      - http
+    methods:
+      - POST
+    service: todo-grpc-service
+
+  - name: get-todo
+    paths:
+      - /todos/{id}
+    protocols:
+      - http
+    methods:
+      - GET
+    service: todo-grpc-service
+
+plugins:
+  - name: grpc-transcode
+    route: get-all-todos
+    protocols:
+      - http
+    config:
+      proto: /usr/local/kong/include/src/api/todo.proto
+
+  - name: grpc-transcode
+    route: create-todo
+    protocols:
+      - http
+    config:
+      proto: /usr/local/kong/include/src/api/todo.proto
+
+  - name: grpc-transcode
+    route: get-todo
+    protocols:
+      - http
+    config:
+      proto: /usr/local/kong/include/src/api/todo.proto
+
+  - name: rate-limiting
+    route: get-all-todos
+    protocols:
+      - http
+    config:
+      second: 10
+      limit_by: header
+      header_name: X-API-Key
+      policy: local
+
+  - name: rate-limiting
+    route: create-todo
+    protocols:
+      - http
+    config:
+      second: 5
+      limit_by: header
+      header_name: X-API-Key
+      policy: local
+
+  - name: rate-limiting
+    route: get-todo
+    protocols:
+      - http
+    config:
+      second: 2
+      limit_by: header
+      header_name: X-API-Key
+      policy: local

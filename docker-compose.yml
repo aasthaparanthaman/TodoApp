@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: todo-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: todoapp
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - todo-network
+
+  todo-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: todo-grpc-app
+    environment:
+      NODE_ENV: production
+      PORT: 50051
+      HOST: 0.0.0.0
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: todoapp
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_SSL: "false"
+      LOG_LEVEL: info
+    ports:
+      - "50051:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/usr/src/app/logs
+    restart: unless-stopped
+    networks:
+      - todo-network
+
+  kong:
+    build:
+      context: .
+      dockerfile: Dockerfile.kong
+    container_name: kong
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /usr/local/kong/kong.yml
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_LOG_LEVEL: debug
+      KONG_PLUGINS: bundled,grpc-transcode
+      KONG_REAL_IP_HEADER: "X-Forwarded-For"
+      KONG_TRUSTED_IPS: "0.0.0.0/0"
+    volumes:
+      - ./kong.yml:/usr/local/kong/kong.yml
+      - ./src/api/todo.proto:/usr/local/kong/include/src/api/todo.proto
+      - ./src/api/google/api:/usr/local/kong/include/google/api
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    depends_on:
+      todo-app:
+        condition: service_started
+    networks:
+      - todo-network
+
+
+volumes:
+  postgres_data:
+
+networks:
+  todo-network:
+    driver: bridge

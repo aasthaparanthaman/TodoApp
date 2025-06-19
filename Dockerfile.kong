@@ -1,0 +1,3 @@
+FROM kong:3.4.2
+
+COPY kong-custom/kong/plugins/grpc-transcode /usr/local/share/lua/5.1/kong/plugins/grpc-transcode
