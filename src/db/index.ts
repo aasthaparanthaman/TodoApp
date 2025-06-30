@@ -53,8 +53,6 @@ class Database {
   async initialize(): Promise<void> {
     try {
       logger.info('Verifying database connection...');
-
-      // Just ping the database, since init.sql runs inside Postgres container
       await this.query('SELECT 1');
       logger.info('Database connection verified successfully');
     } catch (error) {

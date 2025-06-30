@@ -7,16 +7,13 @@ import database from '../db';
 describe('TodoService gRPC', () => {
   let server: grpc.Server;
   let client: any;
-  const PORT = 50052; // Use different port for testing
+  const PORT = 50052;
   const PROTO_PATH = path.join(__dirname, '..', 'api', 'todo.proto');
 
   beforeAll(async () => {
-    // Initialize test database
     await database.initialize();
-    
-    // Setup gRPC server
     server = getServer();
-    
+
     return new Promise<void>((resolve, reject) => {
       server.bindAsync(
         `0.0.0.0:${PORT}`,
@@ -34,7 +31,6 @@ describe('TodoService gRPC', () => {
   });
 
   beforeEach(async () => {
-    // Setup gRPC client
     const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
       keepCase: true,
       longs: String,
@@ -42,14 +38,12 @@ describe('TodoService gRPC', () => {
       defaults: true,
       oneofs: true,
     });
-    
+
     const todoProto = grpc.loadPackageDefinition(packageDefinition) as any;
     client = new todoProto.todo.TodoService(
       `localhost:${PORT}`,
       grpc.credentials.createInsecure()
     );
-    
-    // Clean up test data
     await database.query('DELETE FROM todos WHERE title LIKE $1', ['Test%']);
   });
 
@@ -57,7 +51,7 @@ describe('TodoService gRPC', () => {
     if (client) {
       client.close();
     }
-    
+
     if (server) {
       return new Promise<void>((resolve) => {
         server.tryShutdown(() => {
@@ -155,7 +149,6 @@ describe('TodoService gRPC', () => {
 
   describe('GetAllTodos', () => {
     beforeEach(async () => {
-      // Create some test todos
       const todos = [
         { title: 'Test Todo 1', description: 'Description 1' },
         { title: 'Test Todo 2', description: 'Description 2' },
@@ -272,7 +265,7 @@ describe('TodoService gRPC', () => {
         expect(err).toBeNull();
         expect(response.success).toBe(true);
         expect(response.message).toBe('Todo deleted successfully');
-        
+
         // Verify todo is deleted
         client.GetTodo({ id: createdTodoId }, (err: any, _response: any) => {
           expect(err).toBeDefined();

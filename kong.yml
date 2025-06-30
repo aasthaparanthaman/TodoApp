@@ -1,5 +1,12 @@
 _format_version: "3.0"
 
+plugins:
+  - name: rate-limiting
+    config:
+      second: 10
+      limit_by: ip
+      policy: local
+
 services:
   - name: todo-grpc-service
     url: grpc://3.6.74.35:50051
@@ -8,78 +15,127 @@ routes:
   - name: get-all-todos
     paths:
       - /todos
-    protocols:
-      - http
     methods:
       - GET
-    service: todo-grpc-service  
+    protocols:
+      - http
+    service: todo-grpc-service
+    plugins:
+      - name: grpc-transcode
+        config:
+          proto: /usr/local/kong/include/src/api/todo.proto
+          service: TodoService
+          method: GetAllTodos
+      - name: rate-limiting
+        config:
+          second: 3
+          limit_by: ip
+          policy: local
+
+  - name: get-todo
+    paths:
+      - ~/todos/(?<id>\d+)$
+    strip_path: false
+    methods:
+      - GET
+    protocols:
+      - http
+    regex_priority: 2
+    service: todo-grpc-service
+    plugins:
+      - name: grpc-transcode
+        config:
+          proto: /usr/local/kong/include/src/api/todo.proto
+          service: TodoService
+          method: GetTodo
+      - name: rate-limiting
+        config:
+          second: 5
+          limit_by: ip
+          policy: local
 
   - name: create-todo
     paths:
       - /todos
-    protocols:
-      - http
     methods:
       - POST
+    protocols:
+      - http
     service: todo-grpc-service
+    plugins:
+      - name: grpc-transcode
+        config:
+          proto: /usr/local/kong/include/src/api/todo.proto
+          service: TodoService
+          method: CreateTodo
+      - name: rate-limiting
+        config:
+          second: 2
+          limit_by: ip
+          policy: local
 
-  - name: get-todo
+  - name: update-todo
     paths:
-      - /todos/{id}
-    protocols:
-      - http
+      - ~/todos/(?<id>\d+)$
+    strip_path: false
     methods:
-      - GET
+      - PUT
+    protocols:
+      - http
+    regex_priority: 2
     service: todo-grpc-service
+    plugins:
+      - name: grpc-transcode
+        config:
+          proto: /usr/local/kong/include/src/api/todo.proto
+          service: TodoService
+          method: UpdateTodo
+      - name: rate-limiting
+        config:
+          second: 3
+          limit_by: ip
+          policy: local
 
-plugins:
-  - name: grpc-transcode
-    route: get-all-todos
+  - name: delete-todo
+    paths:
+      - ~/todos/(?<id>\d+)$
+    strip_path: false
+    methods:
+      - DELETE
     protocols:
       - http
-    config:
-      proto: /usr/local/kong/include/src/api/todo.proto
+    regex_priority: 2
+    service: todo-grpc-service
+    plugins:
+      - name: grpc-transcode
+        config:
+          proto: /usr/local/kong/include/src/api/todo.proto
+          service: TodoService
+          method: DeleteTodo
+      - name: rate-limiting
+        config:
+          second: 1
+          limit_by: ip
+          policy: local
 
-  - name: grpc-transcode
-    route: create-todo
+  - name: complete-todo
+    paths:
+      - ~/todos/(?<id>\d+)/complete$
+    strip_path: false
+    methods:
+      - POST
     protocols:
       - http
-    config:
-      proto: /usr/local/kong/include/src/api/todo.proto
-
-  - name: grpc-transcode
-    route: get-todo
-    protocols:
-      - http
-    config:
-      proto: /usr/local/kong/include/src/api/todo.proto
-
-  - name: rate-limiting
-    route: get-all-todos
-    protocols:
-      - http
-    config:
-      second: 10
-      limit_by: header
-      header_name: X-API-Key
-      policy: local
-
-  - name: rate-limiting
-    route: create-todo
-    protocols:
-      - http
-    config:
-      second: 5
-      limit_by: header
-      header_name: X-API-Key
-      policy: local
-
-  - name: rate-limiting
-    route: get-todo
-    protocols:
-      - http
-    config:
-      second: 2
-      limit_by: header
-      header_name: X-API-Key
-      policy: local
+    regex_priority: 3
+    service: todo-grpc-service
+    plugins:
+      - name: grpc-transcode
+        config:
+          proto: /usr/local/kong/include/src/api/todo.proto
+          service: TodoService
+          method: CompleteTodo
+      - name: rate-limiting
+        config:
+          second: 5
+          limit_by: ip
+          policy: local

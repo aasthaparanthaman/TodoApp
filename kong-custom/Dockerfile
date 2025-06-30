@@ -14,8 +14,7 @@ RUN git clone https://github.com/starwing/lua-protobuf.git /tmp/lua-protobuf && 
     luarocks make && \
     cd / && rm -rf /tmp/lua-protobuf
 
-# Copy your grpc-transcode plugin into Kong
-# This assumes you have kong/plugins/grpc-transcode/handler.lua and schema.lua
+# Copy grpc-transcode plugin into Kong
 COPY kong /usr/local/share/lua/5.1/kong
 
 # Enable the plugin

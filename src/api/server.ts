@@ -4,8 +4,10 @@ import path from 'path';
 import { config } from '../config';
 import { todoServiceImplementation } from '../services/todoService';
 import logger from '../config/logger';
+const grpcReflection = require('@grpc/reflection');
 
-const PROTO_PATH = path.join(__dirname, 'todo.proto');
+
+const PROTO_PATH = path.join(__dirname, '../api/todo.proto');
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
@@ -14,12 +16,18 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   defaults: true,
   oneofs: true,
   includeDirs: [
-    path.join(__dirname),
-    path.join(__dirname, './google/api'),
+    path.join(__dirname, '../api'),
+    path.join(__dirname, '../api/google/api'),
   ],
 });
 
 const todoProto = grpc.loadPackageDefinition(packageDefinition) as any;
+logger.info(`Loaded proto keys: ${Object.keys(todoProto)}`);
+logger.info(`todoProto.todo: ${JSON.stringify(todoProto.todo)}`);
+if (!todoProto.todo || !todoProto.todo.TodoService) {
+  logger.error("TodoService not found in loaded proto definition.");
+  process.exit(1);
+}
 
 function getServer(): grpc.Server {
   const server = new grpc.Server();
@@ -29,25 +37,28 @@ function getServer(): grpc.Server {
     todoServiceImplementation
   );
 
+  grpcReflection.extend(server, [todoProto.todo.TodoService]);
   return server;
 }
 
 async function startServer(): Promise<void> {
   const server = getServer();
-  const PORT = config.port || 50051;
-  const host = config.host || '0.0.0.0';
-  const address = `${host}:${PORT}`;
+  const port = Number(config.port) || 50051;
+  const address = `0.0.0.0:${port}`;
+
+  logger.info('trying to hind to ')
+  logger.info(`Trying to bind to ${address}`);
 
   return new Promise((resolve, reject) => {
     server.bindAsync(
       address,
       grpc.ServerCredentials.createInsecure(),
-      (err) => {
+      (err: Error | null, _boundPort: number) => {
         if (err) {
           logger.error('Failed to bind server:', err);
           reject(err);
         } else {
-          logger.info(`gRPC server running at ${address}`);
+          logger.info(`gRPC server running at ${address} with reflection`);
           server.start();
           resolve();
         }

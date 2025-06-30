@@ -1,22 +1,12 @@
-export interface Config {
-  port: number;
-  host: string;
-  database: {
-    host: string;
-    port: number;
-    name: string;
-    user: string;
-    password: string;
-    ssl: boolean;
-  };
-  logging: {
-    level: string;
-  };
-}
+import dotenv from 'dotenv';
+dotenv.config();
 
-export const config: Config = {
-  port: parseInt(process.env['PORT'] || '50051', 10),
+export const config = {
+  port: process.env['PORT'] || 50051,
   host: process.env['HOST'] || '0.0.0.0',
+  logging: {
+    level: process.env['LOG_LEVEL'] || 'debug',
+  },
   database: {
     host: process.env['DB_HOST'] || 'localhost',
     port: parseInt(process.env['DB_PORT'] || '5432', 10),
@@ -24,8 +14,5 @@ export const config: Config = {
     user: process.env['DB_USER'] || 'postgres',
     password: process.env['DB_PASSWORD'] || 'password',
     ssl: process.env['DB_SSL'] === 'true',
-  },
-  logging: {
-    level: process.env['LOG_LEVEL'] || 'info',
   },
 };

@@ -2,7 +2,6 @@ import * as grpc from '@grpc/grpc-js';
 import database, { TodoRow } from '../db';
 import logger from '../config/logger';
 
-// Define the Todo interface based on protobuf
 export interface Todo {
   id: number;
   title: string;
@@ -12,7 +11,55 @@ export interface Todo {
   updated_at: string;
 }
 
-// Convert database row to protobuf Todo
+interface GetTodoRequest {
+  id: number;
+}
+
+interface TodoResponse {
+  success: boolean;
+  message: string;
+  todo?: Todo;
+}
+
+interface CreateTodoRequest {
+  title: string;
+  description?: string;
+}
+
+interface UpdateTodoRequest {
+  id: number;
+  title: string;
+  description?: string;
+  completed: boolean;
+}
+
+interface GetAllTodosRequest {
+  page?: number;
+  limit?: number;
+}
+
+interface GetAllTodosResponse {
+  success: boolean;
+  message: string;
+  todos: Todo[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+interface DeleteTodoRequest {
+  id: number;
+}
+
+interface DeleteTodoResponse {
+  success: boolean;
+  message: string;
+}
+
+interface CompleteTodoRequest {
+  id: number;
+}
+
 function todoRowToProto(row: TodoRow): Todo {
   return {
     id: row.id,
@@ -24,9 +71,54 @@ function todoRowToProto(row: TodoRow): Todo {
   };
 }
 
-// gRPC service implementation
 export const todoServiceImplementation = {
-  CreateTodo: async (call: any, callback: any) => {
+  GetTodo: async (
+    call: grpc.ServerUnaryCall<GetTodoRequest, TodoResponse>,
+    callback: grpc.sendUnaryData<TodoResponse>
+  ) => {
+    try {
+      const { id } = call.request;
+      if (!id || id <= 0) {
+        logger.warn(`Invalid todo ID received: ${id}`);
+        return callback({
+          code: grpc.status.INVALID_ARGUMENT,
+          message: 'Valid ID is required',
+        });
+      }
+
+      logger.info(`Getting todo with ID: ${id}`);
+      const result = await database.query('SELECT * FROM todos WHERE id = $1', [
+        id,
+      ]);
+      if (result.rows.length === 0) {
+        logger.info(`Todo with ID ${id} not found`);
+        return callback({
+          code: grpc.status.NOT_FOUND,
+          message: `Todo with ID ${id} not found`,
+        });
+      }
+      const todo = todoRowToProto(result.rows[0]);
+
+      logger.info(`Successfully retrieved todo: ${JSON.stringify(todo)}`);
+      callback(null, {
+        success: true,
+        message: 'Todo retrieved successfully',
+        todo: todo,
+      });
+
+    } catch (error) {
+      logger.error('Error getting todo:', error);
+      callback({
+        code: grpc.status.INTERNAL,
+        message: 'Internal server error',
+      });
+    }
+  },
+
+  CreateTodo: async (
+    call: grpc.ServerUnaryCall<CreateTodoRequest, TodoResponse>,
+    callback: grpc.sendUnaryData<TodoResponse>
+  ) => {
     try {
       const { title, description } = call.request;
 
@@ -60,60 +152,24 @@ export const todoServiceImplementation = {
     }
   },
 
-  GetTodo: async (call: any, callback: any) => {
-    try {
-      const { id } = call.request;
-
-      if (!id || id <= 0) {
-        return callback({
-          code: grpc.status.INVALID_ARGUMENT,
-          message: 'Valid ID is required',
-        });
-      }
-
-      logger.info(`Getting todo with ID: ${id}`);
-
-      const result = await database.query('SELECT * FROM todos WHERE id = $1', [
-        id,
-      ]);
-
-      if (result.rows.length === 0) {
-        return callback({
-          code: grpc.status.NOT_FOUND,
-          message: 'Todo not found',
-        });
-      }
-
-      const todo = todoRowToProto(result.rows[0]);
-
-      callback(null, {
-        success: true,
-        message: 'Todo retrieved successfully',
-        todo: todo,
-      });
-    } catch (error) {
-      logger.error('Error getting todo:', error);
-      callback({
-        code: grpc.status.INTERNAL,
-        message: 'Internal server error',
-      });
-    }
-  },
-
-  GetAllTodos: async (call: any, callback: any) => {
+  GetAllTodos: async (
+    call: grpc.ServerUnaryCall<GetAllTodosRequest, GetAllTodosResponse>,
+    callback: grpc.sendUnaryData<GetAllTodosResponse>
+  ) => {
     try {
       const { page = 1, limit = 10 } = call.request;
-      // const offset = (page - 1) * limit;
+      const offset = (page - 1) * limit;
 
-      // Get todos with pagination
-      const todosResult = await database.query('SELECT * FROM todos');
+      logger.info(`Getting all todos - page: ${page}, limit: ${limit}`);
+      const todosResult = await database.query(
+        'SELECT * FROM todos ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+        [limit, offset]
+      );
 
-      // Get total count
       const countResult = await database.query('SELECT COUNT(*) FROM todos');
       const total = parseInt(countResult.rows[0].count, 10);
 
       const todos = todosResult.rows.map(todoRowToProto);
-      logger.info(JSON.stringify(todos));
 
       callback(null, {
         success: true,
@@ -132,7 +188,10 @@ export const todoServiceImplementation = {
     }
   },
 
-  UpdateTodo: async (call: any, callback: any) => {
+  UpdateTodo: async (
+    call: grpc.ServerUnaryCall<UpdateTodoRequest, TodoResponse>,
+    callback: grpc.sendUnaryData<TodoResponse>
+  ) => {
     try {
       const { id, title, description, completed } = call.request;
 
@@ -151,14 +210,11 @@ export const todoServiceImplementation = {
       }
 
       logger.info(`Updating todo with ID: ${id}`);
-      logger.info(id, title, description, completed);
 
       const result = await database.query(
-        'UPDATE todos SET title = $1, description = $2, completed = $3 WHERE id = $4 RETURNING *',
+        'UPDATE todos SET title = $1, description = $2, completed = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
         [title.trim(), description || '', completed, id]
       );
-
-      logger.info(JSON.stringify(result));
 
       if (result.rows.length === 0) {
         return callback({
@@ -183,7 +239,10 @@ export const todoServiceImplementation = {
     }
   },
 
-  DeleteTodo: async (call: any, callback: any) => {
+  DeleteTodo: async (
+    call: grpc.ServerUnaryCall<DeleteTodoRequest, DeleteTodoResponse>,
+    callback: grpc.sendUnaryData<DeleteTodoResponse>
+  ) => {
     try {
       const { id } = call.request;
 
@@ -221,7 +280,10 @@ export const todoServiceImplementation = {
     }
   },
 
-  CompleteTodo: async (call: any, callback: any) => {
+  CompleteTodo: async (
+    call: grpc.ServerUnaryCall<CompleteTodoRequest, TodoResponse>,
+    callback: grpc.sendUnaryData<TodoResponse>
+  ) => {
     try {
       const { id } = call.request;
 
@@ -235,7 +297,7 @@ export const todoServiceImplementation = {
       logger.info(`Marking todo as completed with ID: ${id}`);
 
       const result = await database.query(
-        'UPDATE todos SET completed = true WHERE id = $1 RETURNING *',
+        'UPDATE todos SET completed = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *',
         [id]
       );
 

@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  postgres:
+  postgres:  
+    container_name: todo-postgres  
     image: postgres:15-alpine
-    container_name: todo-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
@@ -57,23 +57,24 @@ services:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /usr/local/kong/kong.yml
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
-      KONG_LOG_LEVEL: debug
-      KONG_PLUGINS: bundled,grpc-transcode
-      KONG_REAL_IP_HEADER: "X-Forwarded-For"
-      KONG_TRUSTED_IPS: "0.0.0.0/0"
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_PLUGINS: bundled,grpc-transcode,rate-limiting
+      KONG_REAL_IP_HEADER: X-Forwarded-For
+      KONG_TRUSTED_IPS: 0.0.0.0/0
+
+    ports:
+      - "8000:8000"
+      - "8001:8001"
     volumes:
       - ./kong.yml:/usr/local/kong/kong.yml
       - ./src/api/todo.proto:/usr/local/kong/include/src/api/todo.proto
       - ./src/api/google/api:/usr/local/kong/include/google/api
-    ports:
-      - "8000:8000"
-      - "8001:8001"
     depends_on:
       todo-app:
         condition: service_started
     networks:
       - todo-network
-
 
 volumes:
   postgres_data:
