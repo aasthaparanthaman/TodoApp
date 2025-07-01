@@ -7,6 +7,10 @@ plugins:
       limit_by: ip
       policy: local
 
+  - name: pre-function
+    service: todo-grpc-service
+    config: {}
+
 services:
   - name: todo-grpc-service
     url: grpc://3.6.74.35:50051
