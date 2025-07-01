@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grpc-todo-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grpc-todo-app
+  template:
+    metadata:
+      labels:
+        app: grpc-todo-app
+    spec:
+      containers:
+      - name: grpc-todo-app
+        image: grpc-todo-app
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 50051
+        env:
+        - name: DB_HOST
+          value: "todo-postgres"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "postgres"
+        - name: DB_PASSWORD
+          value: "password"
+        - name: DB_NAME
+          value: "todoapp"
