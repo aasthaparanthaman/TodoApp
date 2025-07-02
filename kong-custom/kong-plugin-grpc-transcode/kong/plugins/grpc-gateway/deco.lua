@@ -1,6 +1,4 @@
--- Copyright (c) Kong Inc. 2020
-
-package.loaded.lua_pack = nil   -- BUG: why?
+package.loaded.lua_pack = nil
 require "lua_pack"
 local cjson = require "cjson"
 local protoc = require "protoc"
@@ -9,8 +7,8 @@ local pl_path = require "pl.path"
 
 local setmetatable = setmetatable
 
-local bpack = string.pack         -- luacheck: ignore string
-local bunpack = string.unpack     -- luacheck: ignore string
+local bpack = string.pack
+local bunpack = string.unpack
 
 local ngx = ngx
 local re_gsub = ngx.re.gsub
@@ -41,17 +39,33 @@ local valid_method = {
   delete = true,
 }
 
---[[
-  // ### Path template syntax
-  //
-  //     Template = "/" Segments [ Verb ] ;
-  //     Segments = Segment { "/" Segment } ;
-  //     Segment  = "*" | "**" | LITERAL | Variable ;
-  //     Variable = "{" FieldPath [ "=" Segments ] "}" ;
-  //     FieldPath = IDENT { "." IDENT } ;
-  //     Verb     = ":" LITERAL ;
-]]
--- assume LITERAL = [-_.~0-9a-zA-Z], needs more
+local function validate_id_parameter(vars, path, method)
+  if vars and vars.id then
+    if not vars.id:match("^%d+$") then
+      if method == "get" and path:match("/todos/%w+$") then
+        return nil, "Invalid ID number. ID must be a valid number for retrieving a todo."
+      elseif method == "post" and path:match("/todos/%w+/complete$") then
+        return nil, "Invalid ID number. ID must be a valid number for completing a todo."
+      else
+        return nil, "Invalid ID number. ID must be a valid number."
+      end
+    end
+    
+    local id_num = tonumber(vars.id)
+    if not id_num or id_num <= 0 then
+      if method == "get" and path:match("/todos/%w+$") then
+        return nil, "Invalid ID number. ID must be a positive number for retrieving a todo."
+      elseif method == "post" and path:match("/todos/%w+/complete$") then
+        return nil, "Invalid ID number. ID must be a positive number for completing a todo."
+      else
+        return nil, "Invalid ID number. ID must be a positive number."
+      end
+    end
+  end
+  
+  return true
+end
+
 local options_path_regex = [=[{([-_.~0-9a-zA-Z]+)=?((?:(?:\*|\*\*|[-_.~0-9a-zA-Z])/?)+)?}]=]
 
 local function parse_options_path(path)
@@ -60,7 +74,6 @@ local function parse_options_path(path)
   local path_regex, _, err = re_gsub("^" .. path .. "$", options_path_regex, function(m)
     local var = m[1]
     local paths = m[2]
-    -- store lookup table to matched groups to variable name
     match_groups[match_group_idx] = var
     match_group_idx = match_group_idx + 1
     if not paths or paths == "*" then
@@ -78,8 +91,6 @@ local function parse_options_path(path)
   return path_regex, match_groups
 end
 
--- parse, compile and load .proto file
--- returns a table mapping valid request URLs to input/output types
 local _proto_info = {}
 local function get_proto_info(fname)
   local info = _proto_info[fname]
@@ -133,8 +144,6 @@ local function get_proto_info(fname)
   return info
 end
 
--- return input and output names of the method specified by the url path
--- TODO: memoize
 local function rpc_transcode(method, path, protofile)
   if not protofile then
     return nil
@@ -155,6 +164,12 @@ local function rpc_transcode(method, path, protofile)
       for i, name in ipairs(endpoint.varnames) do
         vars[name] = m[i]
       end
+      
+      local validation_ok, validation_err = validate_id_parameter(vars, path, method)
+      if not validation_ok then
+        return nil, validation_err
+      end
+      
       return endpoint, vars
     end
   end
@@ -170,7 +185,7 @@ function deco.new(method, path, protofile)
   local endpoint, vars = rpc_transcode(method, path, protofile)
 
   if not endpoint then
-    return nil, "failed to transcode .proto file " .. vars
+    return nil, vars
   end
 
   return setmetatable({
@@ -190,7 +205,7 @@ local function unframe(body)
     return nil, body
   end
 
-  local pos, ftype, sz = bunpack(body, "C>I")       -- luacheck: ignore ftype
+  local pos, ftype, sz = bunpack(body, "C>I")
   local frame_end = pos + sz - 1
   if frame_end > #body then
     return nil, body
@@ -201,33 +216,14 @@ end
 
 
 function deco:upstream(body)
-  --[[
-    // Note that when using `*` in the body mapping, it is not possible to
-    // have HTTP parameters, as all fields not bound by the path end in
-    // the body. This makes this option more rarely used in practice when
-    // defining REST APIs. The common usage of `*` is in custom methods
-    // which don't use the URL at all for transferring data.
-  ]]
-  -- TODO: do we allow http parameter when body is not *?
   local payload = self.template_payload
   local body_variable = self.endpoint.body_variable
   if body_variable then
     if body and #body > 0 then
       local body_decoded = cjson.decode(body)
       if body_variable ~= "*" then
-        --[[
-          // For HTTP methods that allow a request body, the `body` field
-          // specifies the mapping. Consider a REST update method on the
-          // message resource collection:
-        ]]
         payload[body_variable] = body_decoded
       elseif type(body_decoded) == "table" then
-        --[[
-          // The special name `*` can be used in the body mapping to define that
-          // every field not bound by the path template should be mapped to the
-          // request body.  This enables the following alternative definition of
-          // the update method:
-        ]]
         for k, v in pairs(body_decoded) do
           payload[k] = v
         end
@@ -236,11 +232,6 @@ function deco:upstream(body)
       end
     end
   else
-    --[[
-      // Any fields in the request message which are not bound by the path template
-      // automatically become HTTP query parameters if there is no HTTP request body.
-    ]]--
-    -- TODO primitive type checking
     local args, err = ngx.req.get_uri_args()
     if not err then
       for k, v in pairs(args) do

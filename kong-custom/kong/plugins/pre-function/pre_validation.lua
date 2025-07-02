@@ -14,24 +14,20 @@ function _M.validate()
   local errors = {}
 
   local is_create = method == "POST" and path == "/todos"
-  local is_update = method == "PUT" and path:match("^/todos/[%w%-]+$")
-  local is_get_one = method == "GET" and path:match("^/todos/[%w%-]+$")
+  local is_update = method == "PUT" and path:match("^/todos/%d+$")
+  local is_get_one = method == "GET" and path:match("^/todos/%d+$")
+  local is_get_all = method == "GET" and path == "/todos"
+  local is_delete = method == "DELETE" and path:match("^/todos/%d+$")
+  local is_complete = method == "POST" and path:match("^/todos/%d+/complete$")
 
-  if is_get_one then
-    local id = path:match("^/todos/(.+)$")
-    if is_invalid_id(id) then
+  if is_get_one or is_update or is_delete or is_complete then
+    local id_pattern = is_complete and "^/todos/(%d+)/complete$" or "^/todos/(%d+)$"
+    local id = path:match(id_pattern)
+    
+    if not id or not id:match("^%d+$") then
       return kong.response.exit(400, {
-        message = "Invalid ID in URL. ID must be a number."
+        message = "Invalid ID in URL. ID must be a valid number."
       })
-    end
-  end
-
-
-  if is_get_one then
-    local body, err = kong.request.get_body()
-
-    if not body then
-      return kong.response.exit(400, { message = "Invalid ID number" })
     end
   end
 
@@ -39,7 +35,9 @@ function _M.validate()
     local body, err = kong.request.get_body()
 
     if not body then
-      return kong.response.exit(400, { message = "Missing request body" })
+      return kong.response.exit(400, { 
+        message = "Request body is required for this endpoint" 
+      })
     end
 
     if is_invalid_string(body.title) then
@@ -52,9 +50,28 @@ function _M.validate()
 
     if next(errors) ~= nil then
       return kong.response.exit(400, {
-        message = "Invalid request",
+        message = "Invalid request body",
         errors = errors
       })
+    end
+  end
+
+  if is_get_all or is_get_one or is_delete or is_complete then
+    local body, err = kong.request.get_body()
+    
+    if body and next(body) ~= nil then
+      return kong.response.exit(400, {
+        message = "Request body is not allowed for this endpoint"
+      })
+    end
+    
+    local raw_body = kong.request.get_raw_body()
+    if raw_body and string.len(raw_body) > 0 then
+      if not raw_body:match("^%s*$") then
+        return kong.response.exit(400, {
+          message = "Request body is not allowed for this endpoint"
+        })
+      end
     end
   end
 end

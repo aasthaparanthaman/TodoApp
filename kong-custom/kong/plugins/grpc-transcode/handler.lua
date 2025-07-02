@@ -1,5 +1,3 @@
--- Copyright (c) Kong Inc. 2020
-
 local deco = require "kong.plugins.grpc-gateway.deco"
 
 local ngx = ngx
@@ -23,14 +21,12 @@ local grpc_gateway = {
   VERSION = '0.1.3',
 }
 
---require "lua_pack"
-
 
 local CORS_HEADERS = {
   ["Content-Type"] = "application/json",
   ["Access-Control-Allow-Origin"] = "*",
   ["Access-Control-Allow-Methods"] = "GET,POST,PATCH,DELETE",
-  ["Access-Control-Allow-Headers"] = "content-type", -- TODO: more headers?
+  ["Access-Control-Allow-Headers"] = "content-type",
 }
 
 function grpc_gateway:access(conf)
@@ -120,10 +116,8 @@ function grpc_gateway:body_filter(conf)
   local ret = dec:downstream(ngx_arg[1])
   if not ret or #ret == 0 then
     if ngx_arg[2] then
-      -- it's eof and we still cannot decode, fall through
       ret = deco:get_raw_downstream_body()
     else
-      -- clear output if we cannot decode, it could be body is not complete yet
       ret = nil
     end
   end
