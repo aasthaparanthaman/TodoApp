@@ -6,7 +6,6 @@ import { todoServiceImplementation } from '../services/todoService';
 import logger from '../config/logger';
 const grpcReflection = require('@grpc/reflection');
 
-
 const PROTO_PATH = path.join(__dirname, '../api/todo.proto');
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
@@ -37,7 +36,14 @@ function getServer(): grpc.Server {
     todoServiceImplementation
   );
 
-  grpcReflection.extend(server, [todoProto.todo.TodoService]);
+  try {
+    const reflection = new grpcReflection.ReflectionService(packageDefinition);
+    server.addService(reflection.getServiceDefinition(), reflection.getImplementation());
+    logger.info('gRPC reflection enabled');
+  } catch (error) {
+    logger.warn('Failed to enable gRPC reflection:', error);
+  }
+
   return server;
 }
 
@@ -46,7 +52,7 @@ async function startServer(): Promise<void> {
   const port = Number(config.port) || 50051;
   const address = `0.0.0.0:${port}`;
 
-  logger.info('trying to hind to ')
+  logger.info('trying to bind to ')
   logger.info(`Trying to bind to ${address}`);
 
   return new Promise((resolve, reject) => {
