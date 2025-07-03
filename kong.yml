@@ -13,7 +13,7 @@ plugins:
 
 services:
   - name: todo-grpc-service
-    url: grpc://localhost:50051
+    url: grpc://todo-grpc-app:50051
 
 routes:
   - name: get-all-todos

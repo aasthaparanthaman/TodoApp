@@ -61,7 +61,6 @@ function _M.validate()
     
     if body and next(body) ~= nil then
       return kong.response.exit(400, {
-        message = "Request body is not allowed for this endpoint"
       })
     end
     
