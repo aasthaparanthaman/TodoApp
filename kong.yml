@@ -13,7 +13,7 @@ plugins:
 
 services:
   - name: todo-grpc-service
-    url: grpc://localhost:50051
+    url: grpc://todo-grpc-app:50051
 
 routes:
   - name: get-all-todos
@@ -43,7 +43,6 @@ routes:
       - GET
     protocols:
       - http
-    regex_priority: 2
     service: todo-grpc-service
     plugins:
       - name: grpc-transcode
@@ -85,7 +84,6 @@ routes:
       - PUT
     protocols:
       - http
-    regex_priority: 2
     service: todo-grpc-service
     plugins:
       - name: grpc-transcode
@@ -107,7 +105,6 @@ routes:
       - DELETE
     protocols:
       - http
-    regex_priority: 2
     service: todo-grpc-service
     plugins:
       - name: grpc-transcode
@@ -129,7 +126,6 @@ routes:
       - POST
     protocols:
       - http
-    regex_priority: 3
     service: todo-grpc-service
     plugins:
       - name: grpc-transcode
