@@ -1,0 +1,3 @@
+{
+  "lua_schema": "return {\n  name = \"grpc-transcode\",\n  fields = {\n    {\n      config = {\n        type = \"record\",\n        fields = {\n          { proto = { type = \"string\", required = true } },\n          { service = { type = \"string\", required = true } },\n          { method = { type = \"string\", required = true } },\n        },\n      },\n    },\n  },\n}"
+}
