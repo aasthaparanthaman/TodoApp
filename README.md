@@ -107,10 +107,9 @@ grpc-todo-app/
    ./setup-kong.sh
    ```
 
-5. **Open the Kong Manager UI**
+5. **Access the Kong Manager UI**
    ```bash
-   #Open this link in the browser
-   http://localhost:8002
+   Open this link in the browser: http://localhost:8002
    ```
 
 ## 📄 License

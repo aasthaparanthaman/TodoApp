@@ -1,4 +1,9 @@
 #!/bin/bash
+echo "⏳ Waiting for Kong Admin API to be ready..."
+until curl -s http://localhost:8001/status | grep -q "database"; do
+  sleep 1
+done
+echo "✅ Kong is up and running!"
 
 #Service
 #-------------------------------------------------------------------------------------------------------------------------------
@@ -148,75 +153,30 @@ curl -i -X POST http://localhost:8001/routes/complete-todo/plugins \
   --data config.service=TodoService \
   --data config.method=CompleteTodo
 
-  #JWT (JSON Web Token) Plugin
+#JWT (JSON Web Token) Plugin
 #-------------------------------------------------------------------------------------------------------------------------------
-curl -i -X POST http://localhost:8001/routes/get-all-todos/plugins \
-  --data name=jwt \
-  --data config.claims_to_verify=exp \
-  --data config.secret_is_base64=false \
-  --data config.key_claim_name=iss \
-  --data config.header_names[]=authorization \
-  --data config.cookie_names[]=jwt \
-  --data config.uri_param_names[]=jwt \
-  --data config.run_on_preflight=true
 
-curl -i -X POST http://localhost:8001/routes/get-todos/plugins \
-  --data name=jwt \
-  --data config.claims_to_verify=exp \
-  --data config.secret_is_base64=false \
-  --data config.key_claim_name=iss \
-  --data config.header_names[]=authorization \
-  --data config.cookie_names[]=jwt \
-  --data config.uri_param_names[]=jwt \
-  --data config.run_on_preflight=true
+for route in get-all-todos get-todo create-todo update-todo delete-todo complete-todo
+do
+  curl -i -X POST http://localhost:8001/routes/$route/plugins \
+    --data name=jwt \
+    --data config.claims_to_verify=exp \
+    --data config.secret_is_base64=false \
+    --data config.key_claim_name=iss \
+    --data config.header_names[]=authorization \
+    --data config.cookie_names[]=jwt \
+    --data config.uri_param_names[]=jwt \
+    --data config.run_on_preflight=true
+done
 
-curl -i -X POST http://localhost:8001/routes/create-todos/plugins \
-  --data name=jwt \
-  --data config.claims_to_verify=exp \
-  --data config.secret_is_base64=false \
-  --data config.key_claim_name=iss \
-  --data config.header_names[]=authorization \
-  --data config.cookie_names[]=jwt \
-  --data config.uri_param_names[]=jwt \
-  --data config.run_on_preflight=true
+# Kong’s JWT plugin only validates tokens issued by a known consumer
 
-curl -i -X POST http://localhost:8001/routes/update-todos/plugins \
-  --data name=jwt \
-  --data config.claims_to_verify=exp \
-  --data config.secret_is_base64=false \
-  --data config.key_claim_name=iss \
-  --data config.header_names[]=authorization \
-  --data config.cookie_names[]=jwt \
-  --data config.uri_param_names[]=jwt \
-  --data config.run_on_preflight=true
-
-curl -i -X POST http://localhost:8001/routes/delete-todos/plugins \
-  --data name=jwt \
-  --data config.claims_to_verify=exp \
-  --data config.secret_is_base64=false \
-  --data config.key_claim_name=iss \
-  --data config.header_names[]=authorization \
-  --data config.cookie_names[]=jwt \
-  --data config.uri_param_names[]=jwt \
-  --data config.run_on_preflight=true
-
-curl -i -X POST http://localhost:8001/routes/complete-todos/plugins \
-  --data name=jwt \
-  --data config.claims_to_verify=exp \
-  --data config.secret_is_base64=false \
-  --data config.key_claim_name=iss \
-  --data config.header_names[]=authorization \
-  --data config.cookie_names[]=jwt \
-  --data config.uri_param_names[]=jwt \
-  --data config.run_on_preflight=true
-
-# Kong’s JWT plugin only validates tokens issued by a known user
-# Create a user
-curl -i -X POST http://localhost:8001/user \
+# Create the consumer
+curl -i -X POST http://localhost:8001/consumers \
   --data username=todo-app-user
 
-# Add a JWT (unique token) for that user
-curl -i -X POST http://localhost:8001/user/todo-app-user/jwt \
+# Add a JWT credential for that consumer
+curl -i -X POST http://localhost:8001/consumers/todo-app-user/jwt \
   --data key=todo-app-issuer \
   --data secret=your-secret-key-here \
   --data algorithm=HS256
