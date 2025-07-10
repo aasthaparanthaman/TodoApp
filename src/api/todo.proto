@@ -5,9 +5,21 @@ package todo;
 import "google/api/annotations.proto";
 import "google/api/http.proto";
 
-// The Todo service definition
 service TodoService {
-  // Create a new todo item
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/auth/login"
+      body: "*"
+    };
+  }
+
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = {
+      post: "/auth/register"
+      body: "*"
+    };
+  }
+
   rpc CreateTodo(CreateTodoRequest) returns (TodoResponse) {
     option (google.api.http) = {
       post: "/todos"
@@ -43,25 +55,42 @@ service TodoService {
   rpc CompleteTodo(CompleteTodoRequest) returns (TodoResponse) {
     option (google.api.http) = {
       post: "/todos/{id}/complete"
+      body: "*"
     };
   }
 }
 
+message User {
+  int32 id = 1;
+  string username = 2;
+  string email = 3;
+}
 
-// Todo item message
 message Todo {
   int32 id = 1;
   string title = 2;
   string description = 3;
   bool completed = 4;
-  string created_at = 5;
-  string updated_at = 6;
+  int32 user_id = 5;
+  string created_at = 6;
+  string updated_at = 7;
 }
 
-// Request messages
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message RegisterRequest {
+  string username = 1;
+  string password = 2;
+  string email = 3;
+}
+
 message CreateTodoRequest {
   string title = 1;
   string description = 2;
+  int32 user_id = 3;
 }
 
 message GetTodoRequest {
@@ -69,9 +98,7 @@ message GetTodoRequest {
 }
 
 message GetAllTodosRequest {
-  // Optional pagination parameters
-  int32 page = 1;
-  int32 limit = 2;
+  int32 user_id = 1;
 }
 
 message UpdateTodoRequest {
@@ -79,17 +106,33 @@ message UpdateTodoRequest {
   string title = 2;
   string description = 3;
   bool completed = 4;
+  int32 user_id = 5;
 }
 
 message DeleteTodoRequest {
   int32 id = 1;
+  int32 user_id = 2;
 }
 
 message CompleteTodoRequest {
   int32 id = 1;
+  int32 user_id = 2;
 }
 
-// Response messages
+message LoginResponse {
+  bool success = 1;
+  string message = 2;
+  string token = 3;
+  int32 user_id = 4;
+  User user = 5;
+}
+
+message RegisterResponse {
+  bool success = 1;
+  string message = 2;
+  int32 user_id = 3;
+}
+
 message TodoResponse {
   bool success = 1;
   string message = 2;

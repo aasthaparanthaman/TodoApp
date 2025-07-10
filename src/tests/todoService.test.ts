@@ -266,7 +266,6 @@ describe('TodoService gRPC', () => {
         expect(response.success).toBe(true);
         expect(response.message).toBe('Todo deleted successfully');
 
-        // Verify todo is deleted
         client.GetTodo({ id: createdTodoId }, (err: any, _response: any) => {
           expect(err).toBeDefined();
           expect(err.code).toBe(grpc.status.NOT_FOUND);

@@ -9,6 +9,7 @@ export interface TodoRow {
   completed: boolean;
   created_at: Date;
   updated_at: Date;
+  user_id: number;
 }
 
 class Database {

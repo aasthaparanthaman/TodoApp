@@ -30,6 +30,13 @@ function _M.validate()
   if kong.request.get_header("x-skip-validation") == "true" then
     return
   end
+
+local path = kong.request.get_path()
+
+if path and path:match("^/auth") then
+  return
+end
+
   local method = kong.request.get_method()
   local path = kong.request.get_path()
   local errors = {}
@@ -51,18 +58,12 @@ function _M.validate()
         message = "Invalid ID in URL. ID must be a number."
       })
     end
-
-    if not todo_exists(id) then
-      return kong.response.exit(404, {
-        message = "Todo with ID " .. id .. " not found."
-      })
-    end
   end
-
+  
   if is_create or is_update then
-    local body = kong.request.get_body()
-    if not body then
-      return kong.response.exit(400, { message = "Request body is required for this endpoint" })
+    local ok, body = pcall(kong.request.get_body) 
+    if not ok or not body or type(body) ~= "table" then
+      return kong.response.exit(400, { message = "Invalid or missing JSON body" })
     end
 
     if is_invalid_string(body.title) then
@@ -79,12 +80,12 @@ function _M.validate()
       })
     end
   end
-
+  
   if is_get_all or is_get_one or is_delete or is_complete then
-    local body = kong.request.get_body()
+    local ok, body = pcall(kong.request.get_body)
     local raw_body = kong.request.get_raw_body()
-
-    if (body and next(body) ~= nil) or (raw_body and raw_body:match("%S")) then
+    
+    if (ok and body and next(body) ~= nil) or (raw_body and raw_body:match("%S")) then
       return kong.response.exit(400, {
         message = "Request body is not allowed for this endpoint"
       })
