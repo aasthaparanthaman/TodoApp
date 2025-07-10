@@ -50,35 +50,62 @@ services:
     networks:
       - todo-network
 
+  kong-db:
+    image: postgres:15-alpine
+    container_name: kong-db
+    environment:
+      POSTGRES_DB: kong
+      POSTGRES_USER: kong
+      POSTGRES_PASSWORD: kong
+    volumes:
+      - kong_db_data:/var/lib/postgresql/data
+    networks:
+      - todo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kong"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   kong:
     build:
       context: .
       dockerfile: Dockerfile.kong
     container_name: kong
+    restart: always
+    depends_on:
+      kong-db:
+        condition: service_healthy
+    command: /bin/sh -c "kong migrations bootstrap && kong prepare && kong start foreground"
     environment:
-      KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /usr/local/kong/kong.yml
-      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-db
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+      KONG_PLUGINS: bundled,grpc-transcode,pre-function
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001, 0.0.0.0:8444 ssl
       KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
+<<<<<<< HEAD
       KONG_PLUGINS: bundled,grpc-transcode,rate-limiting,pre-function,jwt
       KONG_REAL_IP_HEADER: X-Forwarded-For
       KONG_TRUSTED_IPS: 0.0.0.0/0
+=======
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+>>>>>>> e26c974152e9c9b1647fe43585dfd6a05aa64f87
     ports:
       - "8000:8000"
+      - "8443:8443"
       - "8001:8001"
-    volumes:
-      - ./kong.yml:/usr/local/kong/kong.yml
-      - ./src/api/todo.proto:/usr/local/kong/include/src/api/todo.proto
-      - ./src/api/google/api:/usr/local/kong/include/google/api
-    depends_on:
-      todo-app:
-        condition: service_started
+      - "8444:8444"
+      - "8002:8002"
     networks:
       - todo-network
 
 volumes:
   postgres_data:
+  kong_db_data:
 
 networks:
   todo-network:

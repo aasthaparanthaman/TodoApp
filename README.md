@@ -1,6 +1,6 @@
-# gRPC To-Do Application
+# Kong API Gateway
 
-A high-performance gRPC-based to-do application built with TypeScript, PostgreSQL, and Docker. This application provides a robust API for managing todo items with full CRUD operations, type safety, and containerized deployment.
+A high-performance, gRPC-based to-do application built with TypeScript, PostgreSQL, and Docker, now extended with a Kong API Gateway. This setup provides a robust, secure, and scalable API layer for managing todo items with full CRUD operations, type safety, plugin-based request validation, and seamless HTTP-to-gRPC transcoding, all containerized for easy deployment.
 
 ## 🚀 Features
 
@@ -30,235 +30,89 @@ The gRPC service supports the following operations:
 grpc-todo-app/
 ├── src/
 │   ├── api/
-│   │   ├── server.ts        # gRPC server setup
-│   │   └── todo.proto       # Protocol Buffer definitions
+│   │   ├── server.ts                  # gRPC server setup
+│   │   ├── todo.proto                 # Protocol Buffer definitions for the Todo service
+│   │   └── google/
+│   │       └── api/
+│   │           ├── annotations.proto # Google API annotations for HTTP mapping
+│   │           └── http.proto        # HTTP rules for gRPC transcoding
 │   ├── config/
-│   │   ├── index.ts         # Application configuration
-│   │   └── logger.ts        # Winston logger setup
+│   │   ├── index.ts                  # Centralized app configuration
+│   │   └── logger.ts                 # Winston-based logging setup
 │   ├── db/
-│   │   ├── index.ts         # Database connection and utilities
-│   │   └── init.sql         # Database schema initialization
+│   │   ├── index.ts                  # Database connection setup (PostgreSQL)
+│   │   └── init.sql                  # SQL schema for the todos table
 │   ├── services/
-│   │   └── todoService.ts   # Business logic implementation
-│   ├── tests/
-│   │   ├── setup.ts         # Test configuration
-│   │   └── todoService.test.ts  # Integration tests
-│   └── index.ts             # Application entry point
-├── logs/                    # Application logs
-├── docker-compose.yml       # Multi-service Docker setup
-├── Dockerfile              # Application container definition
-├── package.json            # Dependencies and scripts
-├── tsconfig.json           # TypeScript configuration
-├── jest.config.js          # Test configuration
-├── .eslintrc.js           # ESLint configuration
-└── .prettierrc            # Prettier configuration
+│   │   └── todoService.ts            # Business logic for CRUD operations
+│   └── tests/
+│       ├── setup.ts                 # Test setup and environment
+│       └── todoService.test.ts      # Integration tests for todo service
+├── kong-custom/
+│   ├── kong/
+│   │   └── plugins/
+│   │       ├── grpc-transcode/
+│   │       │   ├── handler.lua       # Handles HTTP-to-gRPC request transcoding
+│   │       │   └── schema.lua        # Plugin configuration schema
+│   │       └── pre-function/
+│   │           ├── handler.lua       # Executes validation logic before upstream
+│   │           ├── pre_validation.lua# Custom input validation logic for endpoints
+│   │           └── schema.lua        # Plugin configuration schema
+│   └── kong-plugin/
+│       └── grpc-gateway/
+│           ├── deco.lua              # gRPC message decoder/encoder helpers
+│           ├── handler.lua           # Custom gRPC gateway plugin logic
+│           └── schema.lua            # Plugin configuration schema
+├── kong.yml                          # Declarative configuration for Kong services/routes/plugins
+├── docker-compose.yml               # Multi-container Docker setup (App, DB, Kong)
+├── Dockerfile                       # Dockerfile for the gRPC Node.js app
+├── Dockerfile.kong                  # Dockerfile for custom Kong Gateway with plugins
+├── package.json                     # App dependencies and scripts
+├── package-lock.json                # Locked dependency versions
+├── tsconfig.json                    # TypeScript compiler configuration
+├── jest.config.js                   # Test runner configuration
+├── .eslintrc.js                     # ESLint linting rules
+├── .prettierrc                      # Prettier formatting rules
+├── .env.example                     # Sample environment variables
+├── .dockerignore                    # Ignore rules for Docker build context
+├── .gitignore                       # Ignore rules for Git
+├── README.md                        # Project overview and documentation
+├── logs/                            # Runtime logs (if any)
+└── node_modules/                    # Installed npm packages
 ```
 
-## ⚡ Quick Start
+## 🐛 Running the Kong API Gateway
 
-### Prerequisites
-
-- Node.js 18+ 
-- Docker and Docker Compose
-- PostgreSQL (if running locally)
-
-### Using Docker (Recommended)
-
-1. **Clone the repository**
+1. **Shutting down the docker container**
    ```bash
-   git clone <repository-url>
-   cd grpc-todo-app
+   docker-compose down -v
    ```
 
-2. **Start the application**
+2. **Building the kong container**
+   ```bash
+   docker compose build kong
+   ```
+
+3. **Starting up the Docker container**
    ```bash
    docker-compose up -d
    ```
 
-   This will start:
-   - PostgreSQL database on port 5432
-   - gRPC Todo service on port 50051
-
-3. **Verify the deployment**
+3. **All execute permissions to the setup file**
    ```bash
-   docker-compose ps
-   docker-compose logs todo-app
+   chmod +x setup-kong.sh
    ```
 
-### Local Development
-
-1. **Install dependencies**
+4. **Run the setup file**
    ```bash
-   npm install
+   ./setup-kong.sh
    ```
 
-2. **Set up environment variables**
+5. **Open the Kong Manager UI**
    ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
+   #Open this link in the browser
+   http://localhost:8002
    ```
-
-3. **Start PostgreSQL**
-   ```bash
-   docker run --name todo-postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=todoapp -p 5432:5432 -d postgres:15-alpine
-   ```
-
-4. **Build and start the application**
-   ```bash
-   npm run build
-   npm start
-   
-   # Or for development with auto-reload:
-   npm run dev
-   ```
-
-## 🧪 Testing
-
-### Run all tests
-```bash
-npm test
-```
-
-### Run tests with coverage
-```bash
-npm run test -- --coverage
-```
-
-### Run tests in watch mode
-```bash
-npm run test:watch
-```
-
-## 📝 Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `50051` | gRPC server port |
-| `HOST` | `0.0.0.0` | Server host |
-| `DB_HOST` | `localhost` | PostgreSQL host |
-| `DB_PORT` | `5432` | PostgreSQL port |
-| `DB_NAME` | `todoapp` | Database name |
-| `DB_USER` | `postgres` | Database user |
-| `DB_PASSWORD` | `password` | Database password |
-| `DB_SSL` | `false` | Enable SSL for database |
-| `LOG_LEVEL` | `info` | Logging level |
-| `NODE_ENV` | `development` | Environment mode |
-
-## 🔧 Development
-
-### Code Formatting
-```bash
-npm run format        # Format code with Prettier
-npm run lint          # Check code with ESLint
-npm run lint:fix      # Fix ESLint issues
-```
-
-### Building
-```bash
-npm run build         # Compile TypeScript to JavaScript
-```
-
-### Database Operations
-```bash
-# Connect to database container
-docker-compose exec postgres psql -U postgres -d todoapp
-
-# View database logs
-docker-compose logs postgres
-```
-
-## 📚 API Documentation
-
-### Protocol Buffers Schema
-
-The API is defined in `src/api/todo.proto`. Key message types:
-
-- `Todo`: Represents a todo item with id, title, description, completed status, and timestamps
-- `CreateTodoRequest`: Request to create a new todo
-- `TodoResponse`: Standard response with success status, message, and todo data
-- `GetAllTodosResponse`: Response for listing todos with pagination
-
-### Example gRPC Client Usage
-
-```typescript
-import * as grpc from '@grpc/grpc-js';
-import * as protoLoader from '@grpc/proto-loader';
-
-const packageDefinition = protoLoader.loadSync('src/api/todo.proto');
-const todoProto = grpc.loadPackageDefinition(packageDefinition) as any;
-
-const client = new todoProto.todo.TodoService(
-  'localhost:50051',
-  grpc.credentials.createInsecure()
-);
-
-// Create a todo
-client.CreateTodo({
-  title: 'Learn gRPC',
-  description: 'Build a todo app with gRPC and TypeScript'
-}, (err, response) => {
-  if (err) {
-    console.error('Error:', err);
-  } else {
-    console.log('Created todo:', response.todo);
-  }
-});
-```
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **Port already in use**
-   ```bash
-   # Change ports in docker-compose.yml or stop conflicting services
-   docker-compose down
-   ```
-
-2. **Database connection issues**
-   ```bash
-   # Check database health
-   docker-compose exec postgres pg_isready -U postgres
-   
-   # View database logs
-   docker-compose logs postgres
-   ```
-
-3. **Application not starting**
-   ```bash
-   # Check application logs
-   docker-compose logs todo-app
-   
-   # Rebuild containers
-   docker-compose build --no-cache
-   ```
-
-## 📈 Performance Considerations
-
-- Database indexes on `completed` and `created_at` fields for optimized queries
-- Connection pooling for database connections
-- Structured logging for debugging and monitoring
-- Health checks for service monitoring
-- Non-root user in Docker for security
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Make your changes and add tests
-4. Run tests and linting: `npm test && npm run lint`
-5. Commit your changes: `git commit -am 'Add some feature'`
-6. Push to the branch: `git push origin feature/your-feature`
-7. Submit a pull request
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🔗 Additional Resources
-
-- [gRPC Documentation](https://grpc.io/docs/)
-- [Protocol Buffers Guide](https://developers.google.com/protocol-buffers)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Docker Compose Reference](https://docs.docker.com/compose/)

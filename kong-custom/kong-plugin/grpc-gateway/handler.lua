@@ -1,5 +1,3 @@
--- Copyright (c) Kong Inc. 2020
-
 local deco = require "kong.plugins.grpc-gateway.deco"
 
 local ngx = ngx
@@ -23,14 +21,12 @@ local grpc_gateway = {
   VERSION = '0.1.3',
 }
 
---require "lua_pack"
-
 
 local CORS_HEADERS = {
   ["Content-Type"] = "application/json",
   ["Access-Control-Allow-Origin"] = "*",
   ["Access-Control-Allow-Methods"] = "GET,POST,PATCH,DELETE",
-  ["Access-Control-Allow-Headers"] = "content-type", -- TODO: more headers?
+  ["Access-Control-Allow-Headers"] = "content-type",
 }
 
 function grpc_gateway:access(conf)
@@ -66,26 +62,24 @@ function grpc_gateway:access(conf)
   kong_service_request_set_method("POST")
 end
 
-
--- https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
 local grpc_status_map = {
-   [0] = 200, -- OK
-   [1] = 499, -- CANCELLED
-   [2] = 500, -- UNKNOWN
-   [3] = 400, -- INVALID_ARGUMENT
-   [4] = 504, -- DEADLINE_EXCEEDED
-   [5] = 404, -- NOT_FOUND
-   [6] = 409, -- ALREADY_EXISTS
-   [7] = 403, -- PERMISSION_DENIED
-  [16] = 401, -- UNAUTHENTICATED
-   [8] = 429, -- RESOURCE_EXHAUSTED
-   [9] = 400, -- FAILED_PRECONDITION
-  [10] = 409, -- ABORTED
-  [11] = 400, -- OUT_OF_RANGE
-  [12] = 500, -- UNIMPLEMENTED
-  [13] = 500, -- INTERNAL
-  [14] = 503, -- UNAVAILABLE
-  [15] = 500, -- DATA_LOSS
+   [0] = 200,
+   [1] = 499,
+   [2] = 500,
+   [3] = 400,
+   [4] = 504,
+   [5] = 404,
+   [6] = 409,
+   [7] = 403,
+  [16] = 401,
+   [8] = 429,
+   [9] = 400,
+  [10] = 409,
+  [11] = 400,
+  [12] = 500,
+  [13] = 500,
+  [14] = 503,
+  [15] = 500,
 }
 
 
@@ -120,10 +114,8 @@ function grpc_gateway:body_filter(conf)
   local ret = dec:downstream(ngx_arg[1])
   if not ret or #ret == 0 then
     if ngx_arg[2] then
-      -- it's eof and we still cannot decode, fall through
       ret = deco:get_raw_downstream_body()
     else
-      -- clear output if we cannot decode, it could be body is not complete yet
       ret = nil
     end
   end
