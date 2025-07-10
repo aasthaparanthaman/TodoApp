@@ -1,9 +1,4 @@
 #!/bin/bash
-echo "⏳ Waiting for Kong Admin API to be ready..."
-until curl -s http://localhost:8001/status | grep -q "database"; do
-  sleep 1
-done
-echo "✅ Kong is up and running!"
 
 #Service
 #-------------------------------------------------------------------------------------------------------------------------------
