@@ -49,6 +49,18 @@ curl -i -X POST http://localhost:8001/services/todo-grpc-service/routes \
   --data 'protocols[]=http' \
   --data strip_path=false
 
+curl -i -X POST http://localhost:8001/services/todo-grpc-service/routes \
+  --data name=auth-login \
+  --data 'paths[]=/auth/login' \
+  --data 'methods[]=POST' \
+  --data 'protocols[]=http'
+
+curl -i -X POST http://localhost:8001/services/todo-grpc-service/routes \
+  --data name=auth-register \
+  --data 'paths[]=/auth/register' \
+  --data 'methods[]=POST' \
+  --data 'protocols[]=http'
+
 #Rate-Limiting Plugin
 #-------------------------------------------------------------------------------------------------------------------------------
 
@@ -88,6 +100,18 @@ curl -i -X POST http://localhost:8001/routes/complete-todo/plugins \
   --data config.limit_by=ip \
   --data config.policy=local
 
+curl -i -X POST http://localhost:8001/routes/auth-login/plugins \
+  --data name=rate-limiting \
+  --data config.second=5 \
+  --data config.limit_by=ip \
+  --data config.policy=local
+
+curl -i -X POST http://localhost:8001/routes/auth-register/plugins \
+  --data name=rate-limiting \
+  --data config.second=5 \
+  --data config.limit_by=ip \
+  --data config.policy=local
+
 #Pre-function plugin
 #-------------------------------------------------------------------------------------------------------------------------------
 
@@ -108,6 +132,12 @@ curl -i -X POST http://localhost:8001/routes/delete-todo/plugins \
 
 curl -i -X POST http://localhost:8001/routes/complete-todo/plugins \
   --data name=pre-function 
+
+curl -i -X POST http://localhost:8001/routes/auth-login/plugins \
+  --data name=pre-function
+
+curl -i -X POST http://localhost:8001/routes/auth-register/plugins \
+  --data name=pre-function
 
 #gRPC-transcode Plugin
 #-------------------------------------------------------------------------------------------------------------------------------
@@ -147,6 +177,18 @@ curl -i -X POST http://localhost:8001/routes/complete-todo/plugins \
   --data config.proto=/usr/local/kong/include/src/api/todo.proto \
   --data config.service=TodoService \
   --data config.method=CompleteTodo
+
+curl -i -X POST http://localhost:8001/routes/auth-login/plugins \
+  --data name=grpc-transcode \
+  --data config.proto=/usr/local/kong/include/src/api/todo.proto \
+  --data config.service=TodoService \
+  --data config.method=Login
+
+curl -i -X POST http://localhost:8001/routes/auth-register/plugins \
+  --data name=grpc-transcode \
+  --data config.proto=/usr/local/kong/include/src/api/todo.proto \
+  --data config.service=TodoService \
+  --data config.method=Register
 
 #JWT (JSON Web Token) Plugin
 #-------------------------------------------------------------------------------------------------------------------------------
