@@ -1,6 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 import * as jwt from 'jsonwebtoken';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import database from '../db';
 import logger from '../config/logger';

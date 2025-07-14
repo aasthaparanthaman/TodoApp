@@ -6,6 +6,7 @@ import { todoServiceImplementation } from '../services/todoService';
 import logger from '../config/logger';
 const grpcReflection = require('@grpc/reflection');
 
+
 const PROTO_PATH = path.join(__dirname, '../api/todo.proto');
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
@@ -37,12 +38,16 @@ function getServer(): grpc.Server {
   );
 
   try {
-    const reflection = new grpcReflection.ReflectionService(packageDefinition);
-    server.addService(reflection.getServiceDefinition(), reflection.getImplementation());
+    const reflection = new grpcReflection.ServerReflection(packageDefinition);
+    server.addService(
+      grpcReflection.ServerReflection.service,
+      reflection.implementation
+    );
     logger.info('gRPC reflection enabled');
   } catch (error) {
     logger.warn('Failed to enable gRPC reflection:', error);
   }
+
 
   return server;
 }

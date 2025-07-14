@@ -170,7 +170,7 @@ routes:
 
   - name: update-todo
     paths:
-      - ~/todos/(?<id>\d+)$
+      - /todos/(?<id>\d+)
     strip_path: false
     methods:
       - PUT
@@ -205,7 +205,7 @@ routes:
 
   - name: delete-todo
     paths:
-      - ~/todos/(?<id>\d+)$
+      - /todos/(?<id>\d+)
     strip_path: false
     methods:
       - DELETE
