@@ -1,7 +1,6 @@
 import * as grpc from '@grpc/grpc-js';
 import database from '../db';
 import logger from '../config/logger';
-import { jwtVerify, importX509 } from 'jose';
 
 export interface Todo {
   id: number;
@@ -32,7 +31,7 @@ interface TodoResponse {
 interface CreateTodoRequest {
   title: string;
   description?: string;
-  user_id?: number;
+  user_id?: string;
 }
 
 interface UpdateTodoRequest {
@@ -73,33 +72,6 @@ interface CompleteTodoRequest {
   user_id?: number;
 }
 
-const PUBLIC_CERT = process.env['JWT_CERT_PEM']!;
-
-export async function extractUserIdFromToken(call: grpc.ServerUnaryCall<any, any>): Promise<number> {
-  const metadata = call.metadata.getMap();
-  const authHeader = metadata['authorization'] as string;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new Error('Missing or invalid Authorization header');
-  }
-
-  const token = authHeader.replace('Bearer ', '').trim();
-
-  try {
-    const publicKey = await importX509(PUBLIC_CERT, 'RS256');
-    const { payload } = await jwtVerify(token, publicKey);
-
-    const user_id = payload['user_id'] || payload['userId'];
-    if (!user_id || typeof user_id !== 'number') {
-      throw new Error('Invalid or missing user_id in JWT payload');
-    }
-
-    return user_id;
-  } catch (err) {
-    throw new Error('JWT verification failed');
-  }
-}
-
 function todoRowToProto(row: any): Todo {
   return {
     id: row.id,
@@ -119,7 +91,8 @@ export const todoServiceImplementation = {
   ) => {
     try {
       const { id } = call.request;
-      const user_id = await extractUserIdFromToken(call);
+      const user_idBuffer = call.metadata.get("user_id")[0];
+      const user_id = user_idBuffer?.toString() || '';
 
       const result = await database.query(
         'SELECT * FROM todos WHERE id = $1 AND user_id = $2',
@@ -153,7 +126,9 @@ export const todoServiceImplementation = {
     callback: grpc.sendUnaryData<TodoResponse>
   ) => {
     try {
-      const user_id = await extractUserIdFromToken(call);
+      const user_idBuffer = call.metadata.get("user_id")[0];
+      const user_id = user_idBuffer?.toString() || '';
+
       const { title, description } = call.request;
 
       const result = await database.query(
@@ -176,12 +151,16 @@ export const todoServiceImplementation = {
     }
   },
 
-  GetAllTodos: async (
+  GetAllTodos: async ( 
     call: grpc.ServerUnaryCall<GetAllTodosRequest, GetAllTodosResponse>,
     callback: grpc.sendUnaryData<GetAllTodosResponse>
   ) => {
     try {
-      const user_id = await extractUserIdFromToken(call);
+      console.log("🌐 Metadata received in GetAllTodos:", call.metadata.getMap());
+
+      const user_idBuffer = call.metadata.get("user_id")[0];
+      const user_id = user_idBuffer?.toString() || '';
+
       const { page = 1, limit = 10 } = call.request;
 
       const offset = (page - 1) * limit;
@@ -225,7 +204,8 @@ export const todoServiceImplementation = {
     callback: grpc.sendUnaryData<TodoResponse>
   ) => {
     try {
-      const user_id = await extractUserIdFromToken(call);
+      const user_idBuffer = call.metadata.get("user_id")[0];
+      const user_id = user_idBuffer?.toString() || '';
       const { title, description, completed } = call.request;
       const id = parseInt(call.request.id?.toString() || '0', 10);
 
@@ -261,7 +241,10 @@ export const todoServiceImplementation = {
     callback: grpc.sendUnaryData<DeleteTodoResponse>
   ) => {
     try {
-      const user_id = await extractUserIdFromToken(call);
+      const user_idBuffer = call.metadata.get("user_id")[0];
+      const user_id = user_idBuffer?.toString() || '';
+
+
       const id = parseInt(call.request.id?.toString() || '0', 10);
 
       const result = await database.query(
@@ -295,7 +278,10 @@ export const todoServiceImplementation = {
     callback: grpc.sendUnaryData<TodoResponse>
   ) => {
     try {
-      const user_id = await extractUserIdFromToken(call);
+      const user_idBuffer = call.metadata.get("user_id")[0];
+      const user_id = user_idBuffer?.toString() || '';
+
+
       const id = parseInt(call.request.id?.toString() || '0', 10);
 
       const result = await database.query(
