@@ -11,58 +11,9 @@ plugins:
     service: todo-grpc-service
     config: {}
 
-consumers: 
-  - username: todo-app-user
-    jwt_secrets:
-      - key: todo-app-issuer
-        secret: your-secret-key-here
-        algorithm: HS256
-  - username: anonymous-user
-
 services:
   - name: todo-grpc-service
     url: grpc://todo-grpc-app:50051
-
-routes:
-  - name: auth-login
-    paths:
-      - /auth/login
-    methods:
-      - POST
-    protocols:
-      - http
-    service: todo-grpc-service
-    plugins:
-      - name: grpc-transcode
-        config:
-          proto: /usr/local/kong/include/src/api/todo.proto
-          service: TodoService
-          method: Login
-      - name: rate-limiting
-        config:
-          second: 5
-          limit_by: ip
-          policy: local
-
-  - name: auth-register
-    paths:
-      - /auth/register
-    methods:
-      - POST
-    protocols:
-      - http
-    service: todo-grpc-service
-    plugins:
-      - name: grpc-transcode
-        config:
-          proto: /usr/local/kong/include/src/api/todo.proto
-          service: TodoService
-          method: Register
-      - name: rate-limiting
-        config:
-          second: 5
-          limit_by: ip
-          policy: local
 
   - name: get-all-todos
     paths:
@@ -78,20 +29,6 @@ routes:
           proto: /usr/local/kong/include/src/api/todo.proto
           service: TodoService
           method: GetAllTodos
-      - name: jwt
-        config:
-          uri_param_names:
-            - jwt
-          cookie_names:
-            - jwt
-          header_names:
-            - authorization
-          claims_to_verify:
-            - exp
-          key_claim_name: iss
-          secret_is_base64: false
-          anonymous: null
-          run_on_preflight: true
       - name: rate-limiting
         config:
           second: 3
@@ -112,20 +49,6 @@ routes:
           proto: /usr/local/kong/include/src/api/todo.proto
           service: TodoService
           method: GetTodo
-      - name: jwt
-        config:
-          uri_param_names:
-            - jwt
-          cookie_names:
-            - jwt
-          header_names:
-            - authorization
-          claims_to_verify:
-            - exp
-          key_claim_name: iss
-          secret_is_base64: false
-          anonymous: null
-          run_on_preflight: true
       - name: rate-limiting
         config:
           second: 5
@@ -148,20 +71,6 @@ routes:
           proto: /usr/local/kong/include/src/api/todo.proto
           service: TodoService
           method: CreateTodo
-      - name: jwt
-        config:
-          uri_param_names:
-            - jwt
-          cookie_names:
-            - jwt
-          header_names:
-            - authorization
-          claims_to_verify:
-            - exp
-          key_claim_name: iss
-          secret_is_base64: false
-          anonymous: null
-          run_on_preflight: true
       - name: rate-limiting
         config:
           second: 2
@@ -171,7 +80,6 @@ routes:
   - name: update-todo
     paths:
       - /todos/(?<id>\d+)
-    strip_path: false
     methods:
       - PUT
     protocols:
@@ -183,20 +91,6 @@ routes:
           proto: /usr/local/kong/include/src/api/todo.proto
           service: TodoService
           method: UpdateTodo
-      - name: jwt
-        config:
-          uri_param_names:
-            - jwt
-          cookie_names:
-            - jwt
-          header_names:
-            - authorization
-          claims_to_verify:
-            - exp
-          key_claim_name: iss
-          secret_is_base64: false
-          anonymous: null
-          run_on_preflight: true
       - name: rate-limiting
         config:
           second: 3
@@ -206,7 +100,6 @@ routes:
   - name: delete-todo
     paths:
       - /todos/(?<id>\d+)
-    strip_path: false
     methods:
       - DELETE
     protocols:
@@ -218,20 +111,6 @@ routes:
           proto: /usr/local/kong/include/src/api/todo.proto
           service: TodoService
           method: DeleteTodo
-      - name: jwt
-        config:
-          uri_param_names:
-            - jwt
-          cookie_names:
-            - jwt
-          header_names:
-            - authorization
-          claims_to_verify:
-            - exp
-          key_claim_name: iss
-          secret_is_base64: false
-          anonymous: null
-          run_on_preflight: true
       - name: rate-limiting
         config:
           second: 1
@@ -240,8 +119,7 @@ routes:
 
   - name: complete-todo
     paths:
-      - ~/todos/(?<id>\d+)/complete$
-    strip_path: false
+      - /todos/(?<id>\d+)/complete
     methods:
       - POST
     protocols:
@@ -253,20 +131,6 @@ routes:
           proto: /usr/local/kong/include/src/api/todo.proto
           service: TodoService
           method: CompleteTodo
-      - name: jwt
-        config:
-          uri_param_names:
-            - jwt
-          cookie_names:
-            - jwt
-          header_names:
-            - authorization
-          claims_to_verify:
-            - exp
-          key_claim_name: iss
-          secret_is_base64: false
-          anonymous: null
-          run_on_preflight: true
       - name: rate-limiting
         config:
           second: 5

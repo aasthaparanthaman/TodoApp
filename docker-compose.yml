@@ -37,8 +37,6 @@ services:
       DB_PASSWORD: password
       DB_SSL: "false"
       LOG_LEVEL: info
-      JWT_SECRET: "your-secret-key-here"
-      JWT_ISSUER: "todo-app-issuer"
     ports:
       - "50051:50051"
     depends_on:
@@ -86,7 +84,7 @@ services:
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
-      KONG_PLUGINS: bundled,grpc-transcode,rate-limiting,pre-function,jwt
+      KONG_PLUGINS: bundled,grpc-transcode,rate-limiting,pre-function
       KONG_REAL_IP_HEADER: X-Forwarded-For
       KONG_TRUSTED_IPS: 0.0.0.0/0
       KONG_ADMIN_ERROR_LOG: /dev/stderr

@@ -49,18 +49,6 @@ curl -i -X POST http://localhost:8001/services/todo-grpc-service/routes \
   --data 'protocols[]=http' \
   --data strip_path=false
 
-curl -i -X POST http://localhost:8001/services/todo-grpc-service/routes \
-  --data name=auth-login \
-  --data 'paths[]=/auth/login' \
-  --data 'methods[]=POST' \
-  --data 'protocols[]=http'
-
-curl -i -X POST http://localhost:8001/services/todo-grpc-service/routes \
-  --data name=auth-register \
-  --data 'paths[]=/auth/register' \
-  --data 'methods[]=POST' \
-  --data 'protocols[]=http'
-
 #Rate-Limiting Plugin
 #-------------------------------------------------------------------------------------------------------------------------------
 
@@ -100,18 +88,6 @@ curl -i -X POST http://localhost:8001/routes/complete-todo/plugins \
   --data config.limit_by=ip \
   --data config.policy=local
 
-curl -i -X POST http://localhost:8001/routes/auth-login/plugins \
-  --data name=rate-limiting \
-  --data config.second=5 \
-  --data config.limit_by=ip \
-  --data config.policy=local
-
-curl -i -X POST http://localhost:8001/routes/auth-register/plugins \
-  --data name=rate-limiting \
-  --data config.second=5 \
-  --data config.limit_by=ip \
-  --data config.policy=local
-
 #Pre-function plugin
 #-------------------------------------------------------------------------------------------------------------------------------
 
@@ -132,12 +108,6 @@ curl -i -X POST http://localhost:8001/routes/delete-todo/plugins \
 
 curl -i -X POST http://localhost:8001/routes/complete-todo/plugins \
   --data name=pre-function 
-
-curl -i -X POST http://localhost:8001/routes/auth-login/plugins \
-  --data name=pre-function
-
-curl -i -X POST http://localhost:8001/routes/auth-register/plugins \
-  --data name=pre-function
 
 #gRPC-transcode Plugin
 #-------------------------------------------------------------------------------------------------------------------------------
@@ -177,43 +147,3 @@ curl -i -X POST http://localhost:8001/routes/complete-todo/plugins \
   --data config.proto=/usr/local/kong/include/src/api/todo.proto \
   --data config.service=TodoService \
   --data config.method=CompleteTodo
-
-curl -i -X POST http://localhost:8001/routes/auth-login/plugins \
-  --data name=grpc-transcode \
-  --data config.proto=/usr/local/kong/include/src/api/todo.proto \
-  --data config.service=TodoService \
-  --data config.method=Login
-
-curl -i -X POST http://localhost:8001/routes/auth-register/plugins \
-  --data name=grpc-transcode \
-  --data config.proto=/usr/local/kong/include/src/api/todo.proto \
-  --data config.service=TodoService \
-  --data config.method=Register
-
-#JWT (JSON Web Token) Plugin
-#-------------------------------------------------------------------------------------------------------------------------------
-
-for route in get-all-todos get-todo create-todo update-todo delete-todo complete-todo
-do
-  curl -i -X POST http://localhost:8001/routes/$route/plugins \
-    --data name=jwt \
-    --data config.claims_to_verify=exp \
-    --data config.secret_is_base64=false \
-    --data config.key_claim_name=iss \
-    --data config.header_names[]=authorization \
-    --data config.cookie_names[]=jwt \
-    --data config.uri_param_names[]=jwt \
-    --data config.run_on_preflight=true
-done
-
-# Kong’s JWT plugin only validates tokens issued by a known consumer
-
-# Create the consumer
-curl -i -X POST http://localhost:8001/consumers \
-  --data username=todo-app-user
-
-# Add a JWT credential for that consumer
-curl -i -X POST http://localhost:8001/consumers/todo-app-user/jwt \
-  --data key=todo-app-issuer \
-  --data secret=your-secret-key-here \
-  --data algorithm=HS256
