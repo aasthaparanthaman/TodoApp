@@ -147,3 +147,15 @@ curl -i -X POST http://localhost:8001/routes/complete-todo/plugins \
   --data config.proto=/usr/local/kong/include/src/api/todo.proto \
   --data config.service=TodoService \
   --data config.method=CompleteTodo
+
+curl -i -X POST http://localhost:8001/routes/auth-login/plugins \
+  --data name=grpc-transcode \
+  --data config.proto=/usr/local/kong/include/src/api/todo.proto \
+  --data config.service=TodoService \
+  --data config.method=Login
+
+curl -i -X POST http://localhost:8001/routes/auth-register/plugins \
+  --data name=grpc-transcode \
+  --data config.proto=/usr/local/kong/include/src/api/todo.proto \
+  --data config.service=TodoService \
+  --data config.method=Register

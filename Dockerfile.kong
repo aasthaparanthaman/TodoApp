@@ -2,4 +2,4 @@ FROM kong/kong:3.6.1
 COPY src/api /usr/local/kong/include/src/api
 COPY kong-custom/kong/plugins/grpc-transcode /usr/local/share/lua/5.1/kong/plugins/grpc-transcode
 COPY kong-custom/kong/plugins/pre-function /usr/local/share/lua/5.1/kong/plugins/pre-function
-ENV KONG_PLUGINS=bundled,pre-function
+ENV KONG_PLUGINS=bundled,grpc-transcode,pre-function

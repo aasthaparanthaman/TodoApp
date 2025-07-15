@@ -37,7 +37,7 @@ services:
 
   - name: get-todo
     paths:
-      - /todos/(?<id>\d+)
+      - ~/todos/(?<id>\d+)$
     methods:
       - GET
     protocols:
@@ -79,7 +79,7 @@ services:
 
   - name: update-todo
     paths:
-      - /todos/(?<id>\d+)
+      - ~/todos/(?<id>\d+)$
     methods:
       - PUT
     protocols:
@@ -99,7 +99,7 @@ services:
 
   - name: delete-todo
     paths:
-      - /todos/(?<id>\d+)
+      - ~/todos/(?<id>\d+)$
     methods:
       - DELETE
     protocols:
