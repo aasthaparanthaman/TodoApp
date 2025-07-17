@@ -38,3 +38,8 @@ CREATE TRIGGER update_todos_updated_at
     BEFORE UPDATE ON todos
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+-- Insert a dummy user for development/testing
+INSERT INTO users (id, username, email, password_hash)
+VALUES (1, 'testuser', 'test@example.com', 'dummy_hash')
+ON CONFLICT (id) DO NOTHING;
