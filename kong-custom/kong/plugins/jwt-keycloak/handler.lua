@@ -75,13 +75,11 @@ local function validate_claims(payload, conf)
   
   kong.log.info("TESTING MODE: Expiration check disabled")
 
-  -- Check issuer
   if conf.issuer and payload.iss ~= conf.issuer then
     kong.log.err("Invalid issuer. Expected: ", conf.issuer, " Got: ", payload.iss)
     return false, "Invalid issuer"
   end
 
-  -- Check audience
   if conf.audience then
     local aud = payload.aud
     if type(aud) == "table" then
@@ -106,9 +104,8 @@ local function validate_claims(payload, conf)
 end
 
 local function extract_user_info(payload)
-  -- Map Keycloak UUID to integer user ID at Kong level
   local keycloak_id = payload.sub
-  local user_id = "1" -- Map to user ID 1 for testing
+  local user_id = "1"
   
   -- You can add more mappings here:
   -- if keycloak_id == "042dc691-06a1-4181-be47-42a495e75a51" then
@@ -120,7 +117,7 @@ local function extract_user_info(payload)
   kong.log.info("Mapped Keycloak ID: ", keycloak_id, " to user_id: ", user_id)
   
   return {
-    user_id = user_id, -- Use mapped integer ID instead of UUID
+    user_id = user_id,
     email = payload.email or "",
     username = payload.preferred_username or "",
     first_name = payload.given_name or "",
@@ -144,7 +141,6 @@ function JWTKeycloakHandler:access(conf)
 
   kong.log.info("Token extracted successfully")
 
-  -- Decode JWT (without signature verification for now)
   local jwt_obj, err = decode_jwt(token)
   if not jwt_obj then
     kong.log.err("JWT decoding failed: ", err)
@@ -156,7 +152,6 @@ function JWTKeycloakHandler:access(conf)
 
   kong.log.info("JWT decoded successfully")
 
-  -- Validate claims
   local valid, err = validate_claims(jwt_obj.payload, conf)
   if not valid then
     kong.log.err("Claims validation failed: ", err)
@@ -167,21 +162,14 @@ function JWTKeycloakHandler:access(conf)
   end
 
   kong.log.info("JWT claims validated successfully")
-
-  -- Extract user information
   local user_info = extract_user_info(jwt_obj.payload)
-
-  -- CRITICAL: Set the user_id header that your gRPC service expects
   kong.service.request.set_header("user_id", user_info.user_id)
-  
-  -- Optional: Set additional user info headers
   kong.service.request.set_header("user_email", user_info.email)
   kong.service.request.set_header("user_username", user_info.username)
   kong.service.request.set_header("user_roles", cjson.encode(user_info.roles))
 
   kong.log.info("User authenticated successfully: ", user_info.user_id)
 
-  -- Store user context for other plugins
   kong.ctx.shared.user = user_info
   kong.ctx.shared.jwt_payload = jwt_obj.payload
 end
