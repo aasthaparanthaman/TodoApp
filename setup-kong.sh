@@ -49,6 +49,49 @@ curl -i -X POST http://localhost:8001/services/todo-grpc-service/routes \
   --data 'protocols[]=http' \
   --data strip_path=false
 
+#JWT Keycloak Plugin
+#-------------------------------------------------------------------------------------------------------------------------------
+
+PUBLIC_KEY="-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuaRMbw3e98tx80ARsbDp/sDz6kk6d8HeNR9/xiN9OR838+HVAPI3jH94yEtasLtsjMXgI3nHNoUo9nPvb/+cr+7DjEq92CFl7KKJMLnl4NV5aVNkZMH1La0KcDWe0cMgbFIibYx0gZ0GS2UikxbaIfiz7hHVjRvPDAdbX5LYtwTZHuYlvIufoD4+cfdTXildBOY1yiIDpnpihKMj0hRgYZcwmOUehqTnKV2/pE3wmGDqkNRgKkVJrD6VpsrIfvudKntkYrWRm8OZP4kalRx0Vc5IEkuX3tQof/AS7owILE1JBpWdcSeu8Gp0V5CnIRnHnHM8Ff3jBAadn+CJjJpFrwIDAQAB
+-----END PUBLIC KEY-----"
+
+curl -i -X POST http://localhost:8001/routes/get-all-todos/plugins \
+  --data name=jwt-keycloak \
+  --data "config.public_key=$PUBLIC_KEY" \
+  --data config.issuer=http://localhost:8080/realms/example \
+  --data config.audience=account
+
+curl -i -X POST http://localhost:8001/routes/get-todo/plugins \
+  --data name=jwt-keycloak \
+  --data "config.public_key=$PUBLIC_KEY" \
+  --data config.issuer=http://localhost:8080/realms/example \
+  --data config.audience=account
+
+curl -i -X POST http://localhost:8001/routes/create-todo/plugins \
+  --data name=jwt-keycloak \
+  --data "config.public_key=$PUBLIC_KEY" \
+  --data config.issuer=http://localhost:8080/realms/example \
+  --data config.audience=account
+
+curl -i -X POST http://localhost:8001/routes/update-todo/plugins \
+  --data name=jwt-keycloak \
+  --data "config.public_key=$PUBLIC_KEY" \
+  --data config.issuer=http://localhost:8080/realms/example \
+  --data config.audience=account
+
+curl -i -X POST http://localhost:8001/routes/delete-todo/plugins \
+  --data name=jwt-keycloak \
+  --data "config.public_key=$PUBLIC_KEY" \
+  --data config.issuer=http://localhost:8080/realms/example \
+  --data config.audience=account
+
+curl -i -X POST http://localhost:8001/routes/complete-todo/plugins \
+  --data name=jwt-keycloak \
+  --data "config.public_key=$PUBLIC_KEY" \
+  --data config.issuer=http://localhost:8080/realms/example \
+  --data config.audience=account
+
 #Rate-Limiting Plugin
 #-------------------------------------------------------------------------------------------------------------------------------
 
