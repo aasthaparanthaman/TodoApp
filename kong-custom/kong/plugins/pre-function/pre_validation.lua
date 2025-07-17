@@ -24,7 +24,6 @@ function _M.validate()
   local is_complete = method == "POST" and path:match("^/todos/%d+/complete$")
   local is_get_all = method == "GET" and path == "/todos"
 
-  -- Only validate ID format for routes that have ID in path
   local id
   if is_get_one or is_update or is_delete or is_complete then
     local pattern = is_complete and "^/todos/(%d+)/complete$" or "^/todos/(%d+)$"
@@ -35,12 +34,8 @@ function _M.validate()
         message = "Invalid ID in URL. ID must be a number."
       })
     end
-    
-    -- Remove the todo_exists() check - let the backend handle this
-    -- The gRPC service will return appropriate errors if todo doesn't exist
   end
 
-  -- Validate request body for CREATE and UPDATE
   if is_create or is_update then
     local ok, body = pcall(kong.request.get_body)
     if not ok or type(body) ~= "table" then
@@ -64,7 +59,6 @@ function _M.validate()
     end
   end
 
-  -- Validate no body for GET, DELETE, and COMPLETE operations
   if is_get_all or is_get_one or is_delete or is_complete then
     local ok1, body = pcall(kong.request.get_body)
     local ok2, raw_body = pcall(kong.request.get_raw_body)
