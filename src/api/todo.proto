@@ -2,24 +2,7 @@ syntax = "proto3";
 
 package todo;
 
-import "google/api/annotations.proto";
-import "google/api/http.proto";
-
 service TodoService {
-  rpc Login(LoginRequest) returns (LoginResponse) {
-    option (google.api.http) = {
-      post: "/auth/login"
-      body: "*"
-    };
-  }
-
-  rpc Register(RegisterRequest) returns (RegisterResponse) {
-    option (google.api.http) = {
-      post: "/auth/register"
-      body: "*"
-    };
-  }
-
   rpc CreateTodo(CreateTodoRequest) returns (TodoResponse) {
     option (google.api.http) = {
       post: "/todos"
@@ -76,17 +59,6 @@ message Todo {
   string updated_at = 7;
 }
 
-message LoginRequest {
-  string username = 1;
-  string password = 2;
-}
-
-message RegisterRequest {
-  string username = 1;
-  string password = 2;
-  string email = 3;
-}
-
 message CreateTodoRequest {
   string title = 1;
   string description = 2;
@@ -117,20 +89,6 @@ message DeleteTodoRequest {
 message CompleteTodoRequest {
   int32 id = 1;
   int32 user_id = 2;
-}
-
-message LoginResponse {
-  bool success = 1;
-  string message = 2;
-  string token = 3;
-  int32 user_id = 4;
-  User user = 5;
-}
-
-message RegisterResponse {
-  bool success = 1;
-  string message = 2;
-  int32 user_id = 3;
 }
 
 message TodoResponse {

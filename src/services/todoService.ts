@@ -156,8 +156,6 @@ export const todoServiceImplementation = {
     callback: grpc.sendUnaryData<GetAllTodosResponse>
   ) => {
     try {
-      console.log("🌐 Metadata received in GetAllTodos:", call.metadata.getMap());
-
       const user_idBuffer = call.metadata.get("user_id")[0];
       const user_id = user_idBuffer?.toString() || '';
 

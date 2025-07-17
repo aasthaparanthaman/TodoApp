@@ -15,6 +15,7 @@ services:
   - name: todo-grpc-service
     url: grpc://todo-grpc-app:50051
 
+routes:
   - name: get-all-todos
     paths:
       - /todos
@@ -34,6 +35,7 @@ services:
           second: 3
           limit_by: ip
           policy: local
+      - name: pre-function
 
   - name: get-todo
     paths:
@@ -76,6 +78,7 @@ services:
           second: 2
           limit_by: ip
           policy: local
+      - name: pre-function
 
   - name: update-todo
     paths:
@@ -96,6 +99,7 @@ services:
           second: 3
           limit_by: ip
           policy: local
+      - name: pre-function
 
   - name: delete-todo
     paths:
@@ -116,6 +120,7 @@ services:
           second: 1
           limit_by: ip
           policy: local
+      - name: pre-function
 
   - name: complete-todo
     paths:
@@ -136,3 +141,4 @@ services:
           second: 5
           limit_by: ip
           policy: local
+      - name: pre-function
