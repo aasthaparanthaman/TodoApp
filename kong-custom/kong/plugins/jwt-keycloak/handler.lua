@@ -31,8 +31,7 @@ local function base64_url_decode(input)
     input = input .. string.rep('=', 4 - remainder)
   end
   input = input:gsub('-','+'):gsub('_','/')
-  
-  -- Use pcall to catch any base64 decoding errors
+
   local ok, result = pcall(ngx_decode_base64, input)
   if not ok or not result then
     return nil
@@ -54,15 +53,13 @@ local function decode_jwt(token)
   if #parts ~= 3 then
     return nil, "Invalid JWT format - must have exactly 3 parts"
   end
-  
-  -- Check if any part is empty
+
   for i, part in ipairs(parts) do
     if not part or part == "" then
       return nil, "Invalid JWT format - part " .. i .. " is empty"
     end
   end
-  
-  -- Decode header and payload with proper error handling
+
   local header_json = base64_url_decode(parts[1])
   local payload_json = base64_url_decode(parts[2])
   
@@ -84,7 +81,6 @@ local function decode_jwt(token)
     return nil, "Invalid JWT payload - malformed JSON"
   end
   
-  -- Validate that we have required fields
   if not payload.sub or not payload.iss or not payload.exp then
     return nil, "Invalid JWT payload - missing required claims"
   end
@@ -97,30 +93,24 @@ local function decode_jwt(token)
 end
 
 local function verify_jwt_signature(header, payload_part, signature_part, conf)
-  -- Check if signature exists and has proper format
   if not signature_part or signature_part == "" then
     return false, "Missing signature"
   end
   
-  -- Check signature format (base64url) - must contain only valid characters
   if not signature_part:match("^[A-Za-z0-9_-]+$") then
     return false, "Invalid signature format"
   end
   
-  -- Check signature length - RSA256 signatures should be exactly 342-344 chars
-  -- If someone removes even 1 character, this will fail
   if #signature_part < 340 or #signature_part > 350 then
     kong.log.err("Invalid signature length: ", #signature_part, " (expected 340-350)")
     return false, "Invalid signature length - token has been tampered with"
   end
   
-  -- Additional check: try to base64 decode the signature to ensure it's valid
   local decoded_sig = base64_url_decode(signature_part)
   if not decoded_sig then
     return false, "Signature is not valid base64url"
   end
   
-  -- RSA256 signature should decode to exactly 256 bytes
   if #decoded_sig ~= 256 then
     kong.log.err("Invalid decoded signature length: ", #decoded_sig, " (expected 256 bytes)")
     return false, "Invalid signature - wrong byte length"
@@ -133,25 +123,20 @@ end
 local function validate_claims(payload, conf)
   local now = ngx.time()
   
-  -- Check expiration (ALLOW EXPIRED TOKENS FROM KEYCLOAK)
   if payload.exp and payload.exp < now then
-    -- Check if issuer is Keycloak - look for "realms" in the URL (which is Keycloak-specific)
     if payload.iss and (payload.iss:lower():find("keycloak") or payload.iss:find("/realms/")) then
       kong.log.info("Allowing expired token from Keycloak issuer: ", payload.iss)
-      -- DO NOT RETURN FALSE - LET IT CONTINUE
     else
       kong.log.err("Token has expired and issuer is not Keycloak. Issuer: ", payload.iss)
       return false, "Token has expired"
     end
   end
 
-  -- Check issuer
   if conf.issuer and payload.iss ~= conf.issuer then
     kong.log.err("Invalid issuer. Expected: ", conf.issuer, " Got: ", payload.iss)
     return false, "Invalid issuer"
   end
 
-  -- Check audience
   if conf.audience then
     local aud = payload.aud
     if type(aud) == "table" then
@@ -176,21 +161,13 @@ local function validate_claims(payload, conf)
 end
 
 local function extract_user_info(payload)
-  -- Map Keycloak UUID to integer user ID at Kong level
   local keycloak_id = payload.sub
-  local user_id = "1" -- Map to user ID 1 for testing
-  
-  -- You can add more mappings here:
-  -- if keycloak_id == "042dc691-06a1-4181-be47-42a495e75a51" then
-  --   user_id = "1"
-  -- elseif keycloak_id == "another-uuid" then
-  --   user_id = "2"
-  -- end
+  local user_id = "1" 
   
   kong.log.info("Mapped Keycloak ID: ", keycloak_id, " to user_id: ", user_id)
   
   return {
-    user_id = user_id, -- Use mapped integer ID instead of UUID
+    user_id = user_id, 
     email = payload.email or "",
     username = payload.preferred_username or "",
     first_name = payload.given_name or "",
@@ -202,8 +179,6 @@ end
 
 function JWTKeycloakHandler:access(conf)
   kong.log.info("JWT Keycloak plugin executing...")
-
-  -- IMPORTANT: Clear any cached auth state to force fresh validation
   kong.ctx.shared.authenticated_user = nil
   kong.ctx.shared.jwt_payload = nil
 
@@ -218,7 +193,6 @@ function JWTKeycloakHandler:access(conf)
 
   kong.log.info("Token extracted successfully: ", string.sub(token, 1, 20) .. "...")
 
-  -- Decode JWT - this will catch malformed tokens
   local jwt_obj, err = decode_jwt(token)
   if not jwt_obj then
     kong.log.err("JWT decoding failed: ", err)
@@ -230,7 +204,6 @@ function JWTKeycloakHandler:access(conf)
 
   kong.log.info("JWT decoded successfully")
 
-  -- Verify signature to catch tampered tokens (CRITICAL FOR SINGLE CHAR CHANGES)
   local sig_valid, sig_err = verify_jwt_signature(jwt_obj.header, token:match("^[^%.]+%.([^%.]+)"), jwt_obj.signature, conf)
   if not sig_valid then
     kong.log.err("Signature verification failed: ", sig_err)
@@ -242,7 +215,6 @@ function JWTKeycloakHandler:access(conf)
 
   kong.log.info("JWT signature validation passed")
 
-  -- Validate claims (includes expired token logic for Keycloak)
   local valid, err = validate_claims(jwt_obj.payload, conf)
   if not valid then
     kong.log.err("Claims validation failed: ", err)
@@ -254,20 +226,16 @@ function JWTKeycloakHandler:access(conf)
 
   kong.log.info("JWT claims validated successfully")
 
-  -- Extract user information
   local user_info = extract_user_info(jwt_obj.payload)
 
-  -- CRITICAL: Set the user_id header that your gRPC service expects
   kong.service.request.set_header("user_id", user_info.user_id)
   
-  -- Optional: Set additional user info headers
   kong.service.request.set_header("user_email", user_info.email)
   kong.service.request.set_header("user_username", user_info.username)
   kong.service.request.set_header("user_roles", cjson.encode(user_info.roles))
 
   kong.log.info("User authenticated successfully: ", user_info.user_id)
 
-  -- Store user context for other plugins
   kong.ctx.shared.user = user_info
   kong.ctx.shared.jwt_payload = jwt_obj.payload
 end

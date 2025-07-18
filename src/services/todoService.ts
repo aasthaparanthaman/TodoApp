@@ -7,8 +7,15 @@ export interface Todo {
   title: string;
   description: string;
   completed: boolean;
+  user_id: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
 }
 
 interface GetTodoRequest {
@@ -24,6 +31,7 @@ interface TodoResponse {
 interface CreateTodoRequest {
   title: string;
   description?: string;
+  user_id?: string;
 }
 
 interface UpdateTodoRequest {
@@ -31,11 +39,13 @@ interface UpdateTodoRequest {
   title: string;
   description?: string;
   completed: boolean;
+  user_id?: number;
 }
 
 interface GetAllTodosRequest {
   page?: number;
   limit?: number;
+  user_id?: number;
 }
 
 interface GetAllTodosResponse {
@@ -49,6 +59,7 @@ interface GetAllTodosResponse {
 
 interface DeleteTodoRequest {
   id: number;
+  user_id?: number;
 }
 
 interface DeleteTodoResponse {
@@ -58,6 +69,7 @@ interface DeleteTodoResponse {
 
 interface CompleteTodoRequest {
   id: number;
+  user_id?: number;
 }
 
 function todoRowToProto(row: any): Todo {
@@ -66,6 +78,7 @@ function todoRowToProto(row: any): Todo {
     title: row.title,
     description: row.description || '',
     completed: row.completed,
+    user_id: row.user_id,
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
   };
@@ -78,10 +91,12 @@ export const todoServiceImplementation = {
   ) => {
     try {
       const { id } = call.request;
+      const user_idBuffer = call.metadata.get("user_id")[0];
+      const user_id = user_idBuffer?.toString() || '';
 
       const result = await database.query(
-        'SELECT * FROM todos WHERE id = $1',
-        [id]
+        'SELECT * FROM todos WHERE id = $1 AND user_id = $2',
+        [id, user_id]
       );
 
       if (result.rows.length === 0) {
@@ -111,11 +126,14 @@ export const todoServiceImplementation = {
     callback: grpc.sendUnaryData<TodoResponse>
   ) => {
     try {
+      const user_idBuffer = call.metadata.get("user_id")[0];
+      const user_id = user_idBuffer?.toString() || '';
+
       const { title, description } = call.request;
 
       const result = await database.query(
-        'INSERT INTO todos (title, description, created_at, updated_at) VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *',
-        [title.trim(), description || '']
+        'INSERT INTO todos (title, description, user_id, created_at, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *',
+        [title.trim(), description || '', user_id]
       );
 
       const todo = todoRowToProto(result.rows[0]);
@@ -138,17 +156,21 @@ export const todoServiceImplementation = {
     callback: grpc.sendUnaryData<GetAllTodosResponse>
   ) => {
     try {
+      const user_idBuffer = call.metadata.get("user_id")[0];
+      const user_id = user_idBuffer?.toString() || '';
+
       const { page = 1, limit = 10 } = call.request;
 
       const offset = (page - 1) * limit;
 
       const todosResult = await database.query(
-        'SELECT * FROM todos ORDER BY created_at DESC LIMIT $1 OFFSET $2',
-        [limit, offset]
+        'SELECT * FROM todos WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
+        [user_id, limit, offset]
       );
 
       const countResult = await database.query(
-        'SELECT COUNT(*) FROM todos'
+        'SELECT COUNT(*) FROM todos WHERE user_id = $1',
+        [user_id]
       );
 
       const total = parseInt(countResult.rows[0].count, 10);
@@ -180,12 +202,14 @@ export const todoServiceImplementation = {
     callback: grpc.sendUnaryData<TodoResponse>
   ) => {
     try {
+      const user_idBuffer = call.metadata.get("user_id")[0];
+      const user_id = user_idBuffer?.toString() || '';
       const { title, description, completed } = call.request;
       const id = parseInt(call.request.id?.toString() || '0', 10);
 
       const result = await database.query(
-        'UPDATE todos SET title = $1, description = $2, completed = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
-        [title.trim(), description || '', completed, id]
+        'UPDATE todos SET title = $1, description = $2, completed = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 AND user_id = $5 RETURNING *',
+        [title.trim(), description || '', completed, id, user_id]
       );
 
       if (result.rows.length === 0) {
@@ -215,11 +239,15 @@ export const todoServiceImplementation = {
     callback: grpc.sendUnaryData<DeleteTodoResponse>
   ) => {
     try {
+      const user_idBuffer = call.metadata.get("user_id")[0];
+      const user_id = user_idBuffer?.toString() || '';
+
+
       const id = parseInt(call.request.id?.toString() || '0', 10);
 
       const result = await database.query(
-        'DELETE FROM todos WHERE id = $1 RETURNING title',
-        [id]
+        'DELETE FROM todos WHERE id = $1 AND user_id = $2 RETURNING title',
+        [id, user_id]
       );
 
       if (result.rows.length === 0) {
@@ -248,11 +276,15 @@ export const todoServiceImplementation = {
     callback: grpc.sendUnaryData<TodoResponse>
   ) => {
     try {
+      const user_idBuffer = call.metadata.get("user_id")[0];
+      const user_id = user_idBuffer?.toString() || '';
+
+
       const id = parseInt(call.request.id?.toString() || '0', 10);
 
       const result = await database.query(
-        'UPDATE todos SET completed = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *',
-        [id]
+        'UPDATE todos SET completed = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2 RETURNING *',
+        [id, user_id]
       );
 
       if (result.rows.length === 0) {
