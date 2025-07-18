@@ -80,7 +80,7 @@ services:
       KONG_PG_HOST: kong-db
       KONG_PG_USER: kong
       KONG_PG_PASSWORD: kong
-      KONG_PLUGINS: bundled,jwt-auth,pre-function,grpc-transcode
+      KONG_PLUGINS: bundled,jwt-keycloak,pre-function,grpc-transcode
       KONG_ADMIN_LISTEN: 0.0.0.0:8001, 0.0.0.0:8444 ssl
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_ADMIN_ACCESS_LOG: /dev/stdout

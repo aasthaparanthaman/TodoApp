@@ -17,7 +17,7 @@ local kong_service_request_set_raw_body = kong.service.request.set_raw_body
 
 
 local grpc_gateway = {
-  PRIORITY = 998,
+  PRIORITY = 500,
   VERSION = '0.1.3',
 }
 

@@ -57,37 +57,37 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuaRMbw3e98tx80ARsbDp/sDz6kk6d8HeNR9/
 -----END PUBLIC KEY-----"
 
 curl -i -X POST http://localhost:8001/routes/get-all-todos/plugins \
-  --data name=jwt-auth \
+  --data name=jwt-keycloak \
   --data "config.public_key=$PUBLIC_KEY" \
   --data config.issuer=http://localhost:8080/realms/example \
   --data config.audience=account
 
 curl -i -X POST http://localhost:8001/routes/get-todo/plugins \
-  --data name=jwt-auth \
+  --data name=jwt-keycloak \
   --data "config.public_key=$PUBLIC_KEY" \
   --data config.issuer=http://localhost:8080/realms/example \
   --data config.audience=account
 
 curl -i -X POST http://localhost:8001/routes/create-todo/plugins \
-  --data name=jwt-auth \
+  --data name=jwt-keycloak \
   --data "config.public_key=$PUBLIC_KEY" \
   --data config.issuer=http://localhost:8080/realms/example \
   --data config.audience=account
 
 curl -i -X POST http://localhost:8001/routes/update-todo/plugins \
-  --data name=jwt-auth \
+  --data name=jwt-keycloak \
   --data "config.public_key=$PUBLIC_KEY" \
   --data config.issuer=http://localhost:8080/realms/example \
   --data config.audience=account
 
 curl -i -X POST http://localhost:8001/routes/delete-todo/plugins \
-  --data name=jwt-auth \
+  --data name=jwt-keycloak \
   --data "config.public_key=$PUBLIC_KEY" \
   --data config.issuer=http://localhost:8080/realms/example \
   --data config.audience=account
 
 curl -i -X POST http://localhost:8001/routes/complete-todo/plugins \
-  --data name=jwt-auth \
+  --data name=jwt-keycloak \
   --data "config.public_key=$PUBLIC_KEY" \
   --data config.issuer=http://localhost:8080/realms/example \
   --data config.audience=account
