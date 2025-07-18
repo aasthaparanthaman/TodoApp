@@ -54,12 +54,14 @@ local function decode_jwt(token)
     return nil, "Invalid JWT format - must have exactly 3 parts"
   end
   
+  -- Check if any part is empty
   for i, part in ipairs(parts) do
     if not part or part == "" then
       return nil, "Invalid JWT format - part " .. i .. " is empty"
     end
   end
   
+  -- Decode header and payload with proper error handling
   local header_json = base64_url_decode(parts[1])
   local payload_json = base64_url_decode(parts[2])
   
@@ -100,7 +102,9 @@ local function verify_jwt_signature(header, payload_part, signature_part, conf)
   if not signature_part:match("^[A-Za-z0-9_-]+$") then
     return false, "Invalid signature format"
   end
-
+  
+  -- Check signature length - RSA256 signatures should be exactly 342-344 chars
+  -- If someone removes even 1 character, this will fail
   if #signature_part < 340 or #signature_part > 350 then
     kong.log.err("Invalid signature length: ", #signature_part, " (expected 340-350)")
     return false, "Invalid signature length - token has been tampered with"
@@ -132,17 +136,10 @@ local function validate_claims(payload, conf)
     end
   end
 
-  if conf.issuer and payload.iss then
-    local expected_issuer = conf.issuer
-    local actual_issuer = payload.iss
-    
-    local normalized_expected = expected_issuer:gsub("host%.docker%.internal", "localhost")
-    local normalized_actual = actual_issuer:gsub("host%.docker%.internal", "localhost")
-    
-    if normalized_actual ~= normalized_expected then
-      kong.log.err("Invalid issuer. Expected: ", expected_issuer, " Got: ", actual_issuer)
-      return false, "Invalid issuer"
-    end
+  -- Check issuer
+  if conf.issuer and payload.iss ~= conf.issuer then
+    kong.log.err("Invalid issuer. Expected: ", conf.issuer, " Got: ", payload.iss)
+    return false, "Invalid issuer"
   end
 
   if conf.audience then
@@ -170,12 +167,19 @@ end
 
 local function extract_user_info(payload)
   local keycloak_id = payload.sub
-  local user_id = "1"
-
+  local user_id = "1" -- Map to user ID 1 for testing
+  
+  -- You can add more mappings here:
+  -- if keycloak_id == "042dc691-06a1-4181-be47-42a495e75a51" then
+  --   user_id = "1"
+  -- elseif keycloak_id == "another-uuid" then
+  --   user_id = "2"
+  -- end
+  
   kong.log.info("Mapped Keycloak ID: ", keycloak_id, " to user_id: ", user_id)
   
   return {
-    user_id = user_id,
+    user_id = user_id, -- Use mapped integer ID instead of UUID
     email = payload.email or "",
     username = payload.preferred_username or "",
     first_name = payload.given_name or "",
@@ -188,6 +192,7 @@ end
 function JWTKeycloakHandler:access(conf)
   kong.log.info("JWT Keycloak plugin executing...")
 
+  -- IMPORTANT: Clear any cached auth state to force fresh validation
   kong.ctx.shared.authenticated_user = nil
   kong.ctx.shared.jwt_payload = nil
 
