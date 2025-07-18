@@ -68,7 +68,6 @@ message GetTodoRequest {
 }
 
 message GetAllTodosRequest {
-  int32 user_id = 1;
 }
 
 message UpdateTodoRequest {
@@ -76,17 +75,14 @@ message UpdateTodoRequest {
   string title = 2;
   string description = 3;
   bool completed = 4;
-  int32 user_id = 5;
 }
 
 message DeleteTodoRequest {
   int32 id = 1;
-  int32 user_id = 2;
 }
 
 message CompleteTodoRequest {
   int32 id = 1;
-  int32 user_id = 2;
 }
 
 message TodoResponse {
