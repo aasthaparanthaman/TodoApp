@@ -30,14 +30,14 @@ curl -i -X POST http://localhost:8001/services/todo-grpc-service/routes \
 
 curl -i -X POST http://localhost:8001/services/todo-grpc-service/routes \
   --data name=update-todo \
-  --data 'paths[]=~/todos/(?<id>\d+)$' \
+  --data 'paths[]=~/todos/(?<id>\\d+)$' \
   --data 'methods[]=PUT' \
   --data 'protocols[]=http' \
   --data strip_path=false
 
 curl -i -X POST http://localhost:8001/services/todo-grpc-service/routes \
   --data name=delete-todo \
-  --data 'paths[]=~/todos/(?<id>\d+)$' \
+  --data 'paths[]=~/todos/(?<id>\\d+)$' \
   --data 'methods[]=DELETE' \
   --data 'protocols[]=http' \
   --data strip_path=false
@@ -57,37 +57,37 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuaRMbw3e98tx80ARsbDp/sDz6kk6d8HeNR9/
 -----END PUBLIC KEY-----"
 
 curl -i -X POST http://localhost:8001/routes/get-all-todos/plugins \
-  --data name=jwt-keycloak \
+  --data name=jwt-auth \
   --data "config.public_key=$PUBLIC_KEY" \
   --data config.issuer=http://localhost:8080/realms/example \
   --data config.audience=account
 
 curl -i -X POST http://localhost:8001/routes/get-todo/plugins \
-  --data name=jwt-keycloak \
+  --data name=jwt-auth \
   --data "config.public_key=$PUBLIC_KEY" \
   --data config.issuer=http://localhost:8080/realms/example \
   --data config.audience=account
 
 curl -i -X POST http://localhost:8001/routes/create-todo/plugins \
-  --data name=jwt-keycloak \
+  --data name=jwt-auth \
   --data "config.public_key=$PUBLIC_KEY" \
   --data config.issuer=http://localhost:8080/realms/example \
   --data config.audience=account
 
 curl -i -X POST http://localhost:8001/routes/update-todo/plugins \
-  --data name=jwt-keycloak \
+  --data name=jwt-auth \
   --data "config.public_key=$PUBLIC_KEY" \
   --data config.issuer=http://localhost:8080/realms/example \
   --data config.audience=account
 
 curl -i -X POST http://localhost:8001/routes/delete-todo/plugins \
-  --data name=jwt-keycloak \
+  --data name=jwt-auth \
   --data "config.public_key=$PUBLIC_KEY" \
   --data config.issuer=http://localhost:8080/realms/example \
   --data config.audience=account
 
 curl -i -X POST http://localhost:8001/routes/complete-todo/plugins \
-  --data name=jwt-keycloak \
+  --data name=jwt-auth \
   --data "config.public_key=$PUBLIC_KEY" \
   --data config.issuer=http://localhost:8080/realms/example \
   --data config.audience=account
@@ -191,14 +191,10 @@ curl -i -X POST http://localhost:8001/routes/complete-todo/plugins \
   --data config.service=TodoService \
   --data config.method=CompleteTodo
 
-curl -i -X POST http://localhost:8001/routes/auth-login/plugins \
-  --data name=grpc-transcode \
-  --data config.proto=/usr/local/kong/include/src/api/todo.proto \
-  --data config.service=TodoService \
-  --data config.method=Login
+curl -s -X PATCH http://localhost:8001/routes/update-todo \
+  -H "Content-Type: application/json" \
+  --data '{"paths": ["~/todos/(?<id>\\d+)$"]}'
 
-curl -i -X POST http://localhost:8001/routes/auth-register/plugins \
-  --data name=grpc-transcode \
-  --data config.proto=/usr/local/kong/include/src/api/todo.proto \
-  --data config.service=TodoService \
-  --data config.method=Register
+curl -s -X PATCH http://localhost:8001/routes/delete-todo \
+  -H "Content-Type: application/json" \
+  --data '{"paths": ["~/todos/(?<id>\\d+)$"]}'

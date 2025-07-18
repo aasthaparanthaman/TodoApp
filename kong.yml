@@ -7,6 +7,9 @@ plugins:
       limit_by: ip
       policy: local
 
+  - name: jwt-auth
+    service: todo-grpc-service
+
   - name: pre-function
     service: todo-grpc-service
     config: {}
@@ -25,18 +28,19 @@ routes:
       - http
     service: todo-grpc-service
     plugins:
-      - name: grpc-transcode
-        config:
-          proto: /usr/local/kong/include/src/api/todo.proto
-          service: TodoService
-          method: GetAllTodos
       - name: rate-limiting
         config:
           second: 3
           limit_by: ip
           policy: local
+      - name: jwt-auth
       - name: pre-function
-
+      - name: grpc-transcode
+        config:
+          proto: /usr/local/kong/include/src/api/todo.proto
+          service: TodoService
+          method: GetAllTodos
+      
   - name: get-todo
     paths:
       - ~/todos/(?<id>\d+)$
@@ -46,19 +50,19 @@ routes:
       - http
     service: todo-grpc-service
     plugins:
-      - name: grpc-transcode
-        config:
-          proto: /usr/local/kong/include/src/api/todo.proto
-          service: TodoService
-          method: GetTodo
       - name: rate-limiting
         config:
           second: 5
           limit_by: ip
           policy: local
+      - name: jwt-auth
       - name: pre-function
-
-
+      - name: grpc-transcode
+        config:
+          proto: /usr/local/kong/include/src/api/todo.proto
+          service: TodoService
+          method: GetTodo
+    
   - name: create-todo
     paths:
       - /todos
@@ -68,60 +72,65 @@ routes:
       - http
     service: todo-grpc-service
     plugins:
-      - name: grpc-transcode
-        config:
-          proto: /usr/local/kong/include/src/api/todo.proto
-          service: TodoService
-          method: CreateTodo
       - name: rate-limiting
         config:
           second: 2
           limit_by: ip
           policy: local
+      - name: jwt-auth
       - name: pre-function
-
+      - name: grpc-transcode
+        config:
+          proto: /usr/local/kong/include/src/api/todo.proto
+          service: TodoService
+          method: CreateTodo
+      
   - name: update-todo
     paths:
-      - ~/todos/(?<id>\d+)$
+      - ~/todos/(?<id>\\d+)$
     methods:
       - PUT
     protocols:
       - http
     service: todo-grpc-service
+    regex_priority: 10
     plugins:
-      - name: grpc-transcode
-        config:
-          proto: /usr/local/kong/include/src/api/todo.proto
-          service: TodoService
-          method: UpdateTodo
       - name: rate-limiting
         config:
           second: 3
           limit_by: ip
           policy: local
+      - name: jwt-auth
       - name: pre-function
+      - name: grpc-transcode
+        config:
+          proto: /usr/local/kong/include/src/api/todo.proto
+          service: TodoService
+          method: UpdateTodo      
 
   - name: delete-todo
     paths:
-      - ~/todos/(?<id>\d+)$
+      - ~/todos/(?<id>\\d+)$
     methods:
       - DELETE
     protocols:
       - http
     service: todo-grpc-service
+    regex_priority: 10
     plugins:
-      - name: grpc-transcode
-        config:
-          proto: /usr/local/kong/include/src/api/todo.proto
-          service: TodoService
-          method: DeleteTodo
       - name: rate-limiting
         config:
           second: 1
           limit_by: ip
           policy: local
+      - name: jwt-auth
       - name: pre-function
-
+      - name: grpc-transcode
+        config:
+          proto: /usr/local/kong/include/src/api/todo.proto
+          service: TodoService
+          method: DeleteTodo
+      
   - name: complete-todo
     paths:
       - /todos/(?<id>\d+)/complete
@@ -131,14 +140,16 @@ routes:
       - http
     service: todo-grpc-service
     plugins:
-      - name: grpc-transcode
-        config:
-          proto: /usr/local/kong/include/src/api/todo.proto
-          service: TodoService
-          method: CompleteTodo
       - name: rate-limiting
         config:
           second: 5
           limit_by: ip
           policy: local
+      - name: jwt-auth
       - name: pre-function
+      - name: grpc-transcode
+        config:
+          proto: /usr/local/kong/include/src/api/todo.proto
+          service: TodoService
+          method: CompleteTodo
+      

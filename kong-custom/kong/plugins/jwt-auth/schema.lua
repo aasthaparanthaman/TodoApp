@@ -1,6 +1,6 @@
 -- kong-custom/kong/plugins/jwt-keycloak/schema.lua
 return {
-  name = "jwt-keycloak",
+  name = "jwt-auth",
   fields = {
     {
       config = {

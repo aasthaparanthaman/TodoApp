@@ -50,6 +50,14 @@ function _M.validate()
     if is_invalid_string(body.description) then
       errors.description = "Description is required and must be a non-empty string"
     end
+    if is_update then
+      if body.id == nil or tostring(body.id) ~= id then
+        errors.id = "ID is required in body and must match the ID in the URL"
+      end
+      if type(body.completed) ~= "boolean" then
+        errors.completed = "Completed is required and must be a boolean"
+      end
+    end
 
     if next(errors) ~= nil then
       return kong.response.exit(400, {
@@ -58,6 +66,7 @@ function _M.validate()
       })
     end
   end
+
 
   if is_get_all or is_get_one or is_delete or is_complete then
     local ok1, body = pcall(kong.request.get_body)
