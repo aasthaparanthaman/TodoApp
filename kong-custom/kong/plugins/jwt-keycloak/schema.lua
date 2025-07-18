@@ -1,5 +1,5 @@
 return {
-  name = "jwt-auth",
+  name = "jwt-keycloak",
   fields = {
     {
       config = {
