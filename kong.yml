@@ -7,7 +7,7 @@ plugins:
       limit_by: ip
       policy: local
 
-  - name: jwt-auth
+  - name: jwt-keycloak
     service: todo-grpc-service
 
   - name: pre-function
@@ -33,7 +33,7 @@ routes:
           second: 3
           limit_by: ip
           policy: local
-      - name: jwt-auth
+      - name: jwt-keycloak
       - name: pre-function
       - name: grpc-transcode
         config:
@@ -55,7 +55,7 @@ routes:
           second: 5
           limit_by: ip
           policy: local
-      - name: jwt-auth
+      - name: jwt-keycloak
       - name: pre-function
       - name: grpc-transcode
         config:
@@ -77,7 +77,7 @@ routes:
           second: 2
           limit_by: ip
           policy: local
-      - name: jwt-auth
+      - name: jwt-keycloak
       - name: pre-function
       - name: grpc-transcode
         config:
@@ -100,7 +100,7 @@ routes:
           second: 3
           limit_by: ip
           policy: local
-      - name: jwt-auth
+      - name: jwt-keycloak
       - name: pre-function
       - name: grpc-transcode
         config:
@@ -123,7 +123,7 @@ routes:
           second: 1
           limit_by: ip
           policy: local
-      - name: jwt-auth
+      - name: jwt-keycloak
       - name: pre-function
       - name: grpc-transcode
         config:
@@ -145,7 +145,7 @@ routes:
           second: 5
           limit_by: ip
           policy: local
-      - name: jwt-auth
+      - name: jwt-keycloak
       - name: pre-function
       - name: grpc-transcode
         config:

@@ -88,6 +88,8 @@ services:
       KONG_REAL_IP_HEADER: X-Forwarded-For
       KONG_TRUSTED_IPS: 0.0.0.0/0
       KONG_ADMIN_ERROR_LOG: /dev/stderr
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
       - "8443:8443"

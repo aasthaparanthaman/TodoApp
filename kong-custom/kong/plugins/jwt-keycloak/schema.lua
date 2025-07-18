@@ -1,5 +1,5 @@
 return {
-  name = "jwt-auth",
+  name = "jwt-keycloak",
   fields = {
     {
       config = {
@@ -16,7 +16,6 @@ return {
             issuer = {
               type = "string",
               required = false,
-              default = "http://localhost:8080/realms/example",
               description = "Expected JWT issuer (Keycloak realm)"
             }
           },
