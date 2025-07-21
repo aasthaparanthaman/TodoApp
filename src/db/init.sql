@@ -10,13 +10,12 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Then create todos table
 CREATE TABLE IF NOT EXISTS todos (
-    id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    completed BOOLEAN NOT NULL DEFAULT FALSE,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  completed BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create index for performance
@@ -38,8 +37,3 @@ CREATE TRIGGER update_todos_updated_at
     BEFORE UPDATE ON todos
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
-
--- Insert a dummy user for development/testing
-INSERT INTO users (id, username, email, password_hash)
-VALUES (1, 'testuser', 'test@example.com', 'dummy_hash')
-ON CONFLICT (id) DO NOTHING;

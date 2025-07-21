@@ -137,10 +137,10 @@ local function validate_claims(payload, conf)
   end
 
   -- Check issuer
-  if conf.issuer and payload.iss ~= conf.issuer then
-    kong.log.err("Invalid issuer. Expected: ", conf.issuer, " Got: ", payload.iss)
-    return false, "Invalid issuer"
-  end
+  -- if conf.issuer and payload.iss ~= conf.issuer then
+  --   kong.log.err("Invalid issuer. Expected: ", conf.issuer, " Got: ", payload.iss)
+  --   return false, "Invalid issuer"
+  -- end
 
   if conf.audience then
     local aud = payload.aud

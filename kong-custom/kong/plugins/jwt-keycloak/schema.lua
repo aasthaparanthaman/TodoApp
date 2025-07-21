@@ -16,6 +16,7 @@ return {
             issuer = {
               type = "string",
               required = false,
+              default = "http://3.6.74.35:8080/realms/example",
               description = "Expected JWT issuer (Keycloak realm)"
             }
           },
