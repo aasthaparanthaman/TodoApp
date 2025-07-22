@@ -52,7 +52,7 @@ routes:
     plugins:
       - name: rate-limiting
         config:
-          second: 5
+          second: 3
           limit_by: ip
           policy: local
       - name: jwt-keycloak
