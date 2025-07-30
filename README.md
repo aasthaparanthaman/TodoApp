@@ -30,54 +30,58 @@ The gRPC service supports the following operations:
 grpc-todo-app/
 ├── src/
 │   ├── api/
-│   │   ├── server.ts                  # gRPC server setup
-│   │   ├── todo.proto                 # Protocol Buffer definitions for the Todo service
+│   │   ├── server.ts                   # gRPC server setup
+│   │   ├── todo.proto                  # Protocol Buffer definitions for the Todo service
 │   │   └── google/
 │   │       └── api/
-│   │           ├── annotations.proto # Google API annotations for HTTP mapping
-│   │           └── http.proto        # HTTP rules for gRPC transcoding
+│   │           ├── annotations.proto   # Google API annotations for HTTP mapping
+│   │           └── http.proto          # HTTP rules for gRPC transcoding
 │   ├── config/
-│   │   ├── index.ts                  # Centralized app configuration
-│   │   └── logger.ts                 # Winston-based logging setup
+│   │   ├── index.ts                    # Centralized app configuration
+│   │   └── logger.ts                   # Winston-based logging setup
 │   ├── db/
-│   │   ├── index.ts                  # Database connection setup (PostgreSQL)
-│   │   └── init.sql                  # SQL schema for the todos table
+│   │   ├── index.ts                    # Database connection setup (PostgreSQL)
+│   │   └── init.sql                    # SQL schema for the todos table
 │   ├── services/
-│   │   └── todoService.ts            # Business logic for CRUD operations
+│   │   └── todoService.ts              # Business logic for CRUD operations
 │   └── tests/
-│       ├── setup.ts                 # Test setup and environment
-│       └── todoService.test.ts      # Integration tests for todo service
+│       ├── setup.ts                    # Test setup and environment
+│       └── todoService.test.ts         # Integration tests for todo service
 ├── kong-custom/
 │   ├── kong/
 │   │   └── plugins/
 │   │       ├── grpc-transcode/
-│   │       │   ├── handler.lua       # Handles HTTP-to-gRPC request transcoding
-│   │       │   └── schema.lua        # Plugin configuration schema
+│   │       │   ├── handler.lua         # Handles HTTP-to-gRPC request transcoding
+│   │       │   └── schema.lua          # Plugin configuration schema
+│   │       ├── jwt-keycloak/
+│   │       │   ├── handler.lua         # JWT validation with Keycloak support
+│   │       │   └── schema.lua          # Plugin configuration schema
 │   │       └── pre-function/
-│   │           ├── handler.lua       # Executes validation logic before upstream
-│   │           ├── pre_validation.lua# Custom input validation logic for endpoints
-│   │           └── schema.lua        # Plugin configuration schema
+│   │           ├── handler.lua         # Executes validation logic before upstream
+│   │           ├── pre_validation.lua  # Custom input validation logic for endpoints
+│   │           └── schema.lua          # Plugin configuration schema
 │   └── kong-plugin/
 │       └── grpc-gateway/
-│           ├── deco.lua              # gRPC message decoder/encoder helpers
-│           ├── handler.lua           # Custom gRPC gateway plugin logic
-│           └── schema.lua            # Plugin configuration schema
-├── kong.yml                          # Declarative configuration for Kong services/routes/plugins
-├── docker-compose.yml               # Multi-container Docker setup (App, DB, Kong)
-├── Dockerfile                       # Dockerfile for the gRPC Node.js app
-├── Dockerfile.kong                  # Dockerfile for custom Kong Gateway with plugins
-├── package.json                     # App dependencies and scripts
-├── package-lock.json                # Locked dependency versions
-├── tsconfig.json                    # TypeScript compiler configuration
-├── jest.config.js                   # Test runner configuration
-├── .eslintrc.js                     # ESLint linting rules
-├── .prettierrc                      # Prettier formatting rules
-├── .env.example                     # Sample environment variables
-├── .dockerignore                    # Ignore rules for Docker build context
-├── .gitignore                       # Ignore rules for Git
-├── README.md                        # Project overview and documentation
-├── logs/                            # Runtime logs (if any)
-└── node_modules/                    # Installed npm packages
+│           ├── deco.lua                # gRPC message decoder/encoder helpers
+│           ├── handler.lua             # Custom gRPC gateway plugin logic
+│           └── schema.lua              # Plugin configuration schema
+├── kong.yml                            # Declarative configuration for Kong services/routes/plugins
+├── docker-compose.yml                  # Multi-container Docker setup (App, DB, Kong)
+├── Dockerfile                          # Dockerfile for the gRPC Node.js app
+├── Dockerfile.kong                     # Dockerfile for custom Kong Gateway with plugins
+├── package.json                        # App dependencies and scripts
+├── package-lock.json                   # Locked dependency versions
+├── tsconfig.json                       # TypeScript compiler configuration
+├── setup-kong.sh                       # Script to configure Kong with routes/services/plugins
+├── jest.config.js                      # Test runner configuration
+├── .eslintrc.js                        # ESLint linting rules
+├── .prettierrc                         # Prettier formatting rules
+├── .env.example                        # Sample environment variables
+├── .dockerignore                       # Ignore rules for Docker build context
+├── .gitignore                          # Ignore rules for Git
+├── README.md                           # Project overview and documentation
+├── logs/                               # Runtime logs (if any)
+└── node_modules/                       # Installed npm packages
 ```
 
 ## 🐛 Running the Kong API Gateway
@@ -109,7 +113,7 @@ grpc-todo-app/
 
 5. **Access the Kong Manager UI**
    ```bash
-   Open this link in the browser: http://localhost:8002
+   Open Kong Manager UI using this link in the browser: http://localhost:8002
    ```
 
 ## 📄 License
